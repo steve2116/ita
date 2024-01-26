@@ -1,0 +1,108 @@
+:root {
+  --height-of-app: 100lvh;
+  --width-of-app: 100lvw;
+  --min-height-of-game: 500px;
+  --height-of-game: calc(min(var(--height-of-app), 100svh) * 0.95);
+  --abs-height-of-game: max(var(--height-of-game), var(--min-height-of-game));
+
+  --width-of-game: min(var(--abs-height-of-game), var(--width-of-app) * 0.85);
+
+  --un: calc(
+    max(var(--abs-height-of-game), var(--width-of-game)) * 0.25 +
+      min(var(--abs-height-of-game), var(--width-of-game)) * 0.75
+  );
+
+  --border-width: 3px;
+  --min-font-size: 8px;
+
+  font-size: max(
+    (var(--un) * 0.032) * 0.7 + 0.3 * var(--min-font-size),
+    var(--min-font-size)
+  );
+}
+
+/*
+--min-height-of-game * 0.85
+ */
+@media (max-width: 425px) {
+  :root {
+    --border-width: 2px;
+  }
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  border: none;
+  box-sizing: border-box;
+}
+
+#app {
+  background-color: transparent;
+}
+
+#holder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: var(--width-of-app);
+  height: var(--height-of-app);
+  padding: 0 calc(var(--width-of-app) * 0.025);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+#game {
+  width: var(--width-of-game);
+  height: fit-content;
+  margin: max((var(--height-of-app) - var(--abs-height-of-game)) / 2, 10px) 0;
+  border-radius: calc(var(--width-of-game) * 0.1);
+  padding: calc(var(--width-of-game) * 0.05);
+}
+
+.light-font-1 {
+  color: black;
+}
+
+.light-bg-1 {
+  background-color: rgb(229, 197, 160);
+}
+
+.light-bg-2 {
+  background-color: rgb(225, 141, 57);
+}
+
+.light-border-1 {
+  border: var(--border-width) solid black;
+}
+
+.light-button-1 {
+  color: black;
+  background-color: rgb(229, 197, 160);
+  border: var(--border-width) solid black;
+}
+
+.dark-font-1 {
+  color: rgb(232, 220, 217);
+}
+
+.dark-bg-1 {
+  background-color: rgb(37, 23, 47);
+}
+
+.dark-bg-2 {
+  background-color: rgb(64, 39, 80);
+}
+
+.dark-border-1 {
+  border: var(--border-width) solid rgb(147, 130, 140);
+}
+
+.dark-button-1 {
+  color: rgb(232, 220, 217);
+  background-color: rgb(37, 23, 47);
+  border: var(--border-width) solid rgb(147, 130, 140);
+}
