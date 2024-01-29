@@ -9,11 +9,15 @@
     >
       <Game
         :theme="theme"
+        :secondsUntilSave="secondsUntilSave"
+        @manual-save="saveGame"
         @change-theme="changeTheme"
       />
     </div>
   </div>
 </template>
+
+// theme-rotation: [ "/src/components/Game/tSettings.vue" ]
 
 <script>
 import Game from "./components/Game.vue";
@@ -30,6 +34,8 @@ export default {
         new: true,
       },
       theme: "light",
+      secondsUntilSave: 150,
+      savingIntervalInSeconds: 300,
     };
   },
   mounted() {
@@ -44,10 +50,10 @@ export default {
       }
     }
     // this.timers.tick = setInterval(() => {}, 200);
-    this.timers.save = setInterval(
-      () => localStorage.setItem("ita-data", this.getSaveData()),
-      60000 // 1 minute
-    );
+    this.timers.save = setInterval(() => {
+      this.secondsUntilSave -= 1;
+      if (this.secondsUntilSave <= 0) this.saveGame();
+    }, 1000);
   },
   unmounted() {
     Object.values(this.timers).forEach((timer) => clearInterval(timer));
@@ -92,6 +98,10 @@ export default {
           break;
         }
       }
+    },
+    saveGame() {
+      this.secondsUntilSave = this.savingIntervalInSeconds;
+      localStorage.setItem("ita-data", this.getSaveData());
     },
   },
 };
