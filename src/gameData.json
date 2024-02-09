@@ -1,0 +1,66 @@
+{
+  "generators": {
+    "air": {
+      "name": "Air",
+      "unlock": "energy-1e1",
+      "time": 2,
+      "softcap": 100,
+      "produce": [
+        {
+          "type": "energy",
+          "baseGain": 1,
+          "level": 1
+        }
+      ],
+      "cost": [
+        {
+          "type": "energy",
+          "cost": 20
+        }
+      ]
+    },
+    "flora": {
+      "name": "Flora",
+      "unlock": "energy-1e3",
+      "time": 120,
+      "softcap": 100,
+      "produce": [
+        {
+          "type": "energy",
+          "baseGain": 200,
+          "level": 45
+        }
+      ],
+      "cost": [
+        {
+          "type": "energy",
+          "cost": 1000
+        }
+      ]
+    },
+    "rodent": {
+      "name": "Rodent",
+      "unlock": "energy-1e5",
+      "time": 600,
+      "softcap": 100,
+      "produce": [
+        {
+          "type": "energy",
+          "baseGain": 10000,
+          "level": 20000
+        },
+        {
+          "type": "mass",
+          "baseGain": 1,
+          "level": 0.1
+        }
+      ],
+      "cost": [
+        {
+          "type": "energy",
+          "cost": 1000000
+        }
+      ]
+    }
+  }
+}

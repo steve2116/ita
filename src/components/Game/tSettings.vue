@@ -24,18 +24,66 @@ import { secondsAsReadable } from "../../utils.js";
       </button>
     </div>
     <div :class="settingStyle">
-      <p>(Temp) Go to game tab</p>
+      <p>Delete data</p>
       <button
         :class="buttonStyle"
-        @click="$emit('tabToGame')"
+        @click="deleteClick()"
       >
-        Game
+        Delete
       </button>
     </div>
+    <div :class="settingStyle">
+      <p>Change tick speed</p>
+      <input
+        id="tick-speed"
+        type="number"
+        v-model="tickSpeed"
+        v-on:keypress.enter.prevent="$emit('changeTickSpeed', tickSpeed)"
+      />
+    </div>
+    <div :class="settingStyle">
+      <p>Cheat energy</p>
+      <button
+        :class="buttonStyle"
+        @click="$emit('cheatEnergy')"
+      >
+        Get
+      </button>
+    </div>
+    <div :class="settingStyle">
+      <p>Change version</p>
+      <select
+        name="version"
+        id="changeVersion"
+        v-model="version"
+      >
+        <option value="0.0.3">0.0.3</option>
+        <option value="0.0.2">0.0.2</option>
+        <option value="0.0.1">0.0.1</option>
+      </select>
+    </div>
+    <div
+      :class="settingStyle"
+      v-if="initialVersion !== version"
+    >
+      <p>
+        {{ versionIsLower ? "Update game" : "Lost data cannot be recovered" }}
+      </p>
+      <button
+        :class="buttonStyle"
+        @click="$emit('changeVersion', version)"
+      >
+        Confirm?
+      </button>
+    </div>
+    <template v-else />
   </section>
 </template>
 
 <script>
+import { themeRotation } from "../../App.vue";
+
+import { isVersion } from "../../App.vue";
 export default {
   name: "Settingst",
   props: {
@@ -47,17 +95,29 @@ export default {
       type: Number,
       required: true,
     },
+    initialTickRate: {
+      type: Number,
+      required: true,
+    },
+    initialVersion: {
+      type: String,
+      required: true,
+    },
   },
   data() {
-    const themeRotation = {
-      light: "dark",
-      dark: "light",
-    };
     return {
       themeRotation,
+      tickSpeed: this.initialTickRate,
+      version: this.initialVersion,
     };
   },
-  emits: ["changeTheme", "manualSave", "tabToGame"],
+  emits: [
+    "changeTheme",
+    "manualSave",
+    "changeTickSpeed",
+    "cheatEnergy",
+    "changeVersion",
+  ],
   computed: {
     buttonStyle() {
       return {
@@ -84,6 +144,14 @@ export default {
     },
     readableSaveTime() {
       return secondsAsReadable(this.secondsUntilSave, "2");
+    },
+    versionIsLower() {
+      return isVersion(this.initialVersion, this.version) === 1;
+    },
+  },
+  methods: {
+    deleteClick() {
+      localStorage.removeItem("ita-data");
     },
   },
 };
