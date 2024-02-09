@@ -205,7 +205,12 @@ export default {
     const decrypt = (data) => {
       return CryptoJS.enc.Base64.parse(data).toString(CryptoJS.enc.Utf8);
     };
-    let data = JSON.parse(decrypt(localStorage.getItem("ita-data") || "{}"));
+    let data;
+    try {
+      data = JSON.parse(decrypt(localStorage.getItem("ita-data")));
+    } catch (e) {
+      data = {};
+    }
     let newData = false;
     const oldVersion = data ? data.version : undefined;
     if (!oldVersion) {
@@ -217,13 +222,13 @@ export default {
     );
     if (!newData && oldVersion !== currentVersion)
       console.log(
-        `Game version out of date, please update your file in settings!`
+        `A more recent version is available! Please update your file in settings.`
       );
     // load game data
     this.theme = data.theme;
     this.initialGameData = {
       generalData: {
-        version: oldVersion,
+        version: oldVersion || currentVersion,
         new: newData,
       },
       tick: data.tick,

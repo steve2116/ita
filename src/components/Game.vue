@@ -143,6 +143,14 @@ export default {
       };
       switch (this.generalData.version) {
         case "0.0.3": {
+          let skillTicks = {};
+          ["air", "flora", "rodent"].forEach((skill) => {
+            try {
+              skillTicks[skill] = this.tick.onTickFuncs[skill].progress;
+            } catch (e) {
+              skillTicks[skill] = 0;
+            }
+          });
           return encrypt(
             JSON.stringify({
               version: "0.0.3",
@@ -160,11 +168,7 @@ export default {
                   flora: this.gameData.skills.flora,
                   rodent: this.gameData.skills.rodent,
                 },
-                skillTicks: {
-                  air: this.tick.onTickFuncs.air.progress,
-                  flora: this.tick.onTickFuncs.flora.progress,
-                  rodent: this.tick.onTickFuncs.rodent.progress,
-                },
+                skillTicks,
               },
             })
           );
@@ -192,7 +196,7 @@ export default {
           );
         }
         case "0.0.1": {
-          return encyrpt(
+          return encrypt(
             JSON.stringify({
               version: "0.0.1",
               theme: this.theme,
