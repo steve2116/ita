@@ -220,14 +220,13 @@ export default {
     },
     holdEnergy() {
       try {
-        this.clickEnergy();
-        // if (!this.preventHold.energy) {
-        //   this.preventHold.energy = true;
-        //   setTimeout(() => {
-        //     this.preventHold.energy = false;
-        //   }, 200);
-        //   this.gameData.resources.energy++;
-        // }
+        if (!this.preventHold.energy) {
+          this.preventHold.energy = true;
+          setTimeout(() => {
+            this.preventHold.energy = false;
+          }, 200);
+          this.gameData.resources.energy++;
+        }
       } catch (e) {
         console.error(e);
       }

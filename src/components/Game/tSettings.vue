@@ -24,16 +24,7 @@ import { secondsAsReadable } from "../../utils.js";
       </button>
     </div>
     <div :class="settingStyle">
-      <p>Delete data</p>
-      <button
-        :class="buttonStyle"
-        @click="deleteClick()"
-      >
-        Delete
-      </button>
-    </div>
-    <div :class="settingStyle">
-      <p>Change tick speed</p>
+      <p>Game update rate (ms)</p>
       <input
         id="tick-speed"
         type="number"
@@ -42,36 +33,31 @@ import { secondsAsReadable } from "../../utils.js";
       />
     </div>
     <div :class="settingStyle">
-      <p>Cheat energy</p>
-      <button
-        :class="buttonStyle"
-        @click="$emit('cheatEnergy')"
-      >
-        Get
-      </button>
-    </div>
-    <div :class="settingStyle">
       <p>Change version</p>
       <select
         name="version"
         id="changeVersion"
-        v-model="version"
+        v-model="selectVersion"
       >
-        <option value="0.0.3">0.0.3</option>
-        <option value="0.0.2">0.0.2</option>
-        <option value="0.0.1">0.0.1</option>
+        <option
+          v-for="version of Object.keys(versions)"
+          :key="version"
+          :value="version"
+        >
+          {{ version }}
+        </option>
       </select>
     </div>
     <div
       :class="settingStyle"
-      v-if="initialVersion !== version"
+      v-if="initialVersion !== selectVersion"
     >
       <p>
         {{ versionIsLower ? "Update game" : "Lost data cannot be recovered" }}
       </p>
       <button
         :class="buttonStyle"
-        @click="$emit('changeVersion', version)"
+        @click="$emit('changeVersion', selectVersion)"
       >
         Confirm?
       </button>
@@ -81,7 +67,7 @@ import { secondsAsReadable } from "../../utils.js";
 </template>
 
 <script>
-import { themeRotation } from "../../App.vue";
+import { themeRotation, versions } from "../../App.vue";
 
 import { isVersion } from "../../App.vue";
 export default {
@@ -108,7 +94,7 @@ export default {
     return {
       themeRotation,
       tickSpeed: this.initialTickRate,
-      version: this.initialVersion,
+      selectVersion: this.initialVersion,
     };
   },
   emits: [
@@ -146,7 +132,7 @@ export default {
       return secondsAsReadable(this.secondsUntilSave, "2");
     },
     versionIsLower() {
-      return isVersion(this.initialVersion, this.version) === 1;
+      return isVersion(this.initialVersion, this.selectVersion) === 1;
     },
   },
   methods: {
@@ -185,15 +171,27 @@ h2 {
   margin: 0.1rem;
 }
 .setting > p {
+  grid-column: 1 / 2;
   text-align: center;
   font-size: 1.15rem;
 }
 .setting > button {
+  grid-column: 2 / 3;
   height: 100%;
   width: 100%;
   margin: calc(var(--un) * 0.2);
   border-radius: calc(var(--un) * 4);
   font-size: 1.15rem;
   cursor: pointer;
+}
+.setting > input,
+.setting > select {
+  grid-column: 2 / 3;
+  height: 80%;
+  width: 100%;
+  margin: calc(var(--un) * 0.2);
+  padding: calc(var(--un) * 1);
+  border-radius: calc(var(--un) * 4);
+  font-size: 1.15rem;
 }
 </style>
