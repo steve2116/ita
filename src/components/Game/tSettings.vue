@@ -66,6 +66,33 @@ import { secondsAsReadable } from "../../utils.js";
         </option>
       </select>
     </div>
+    <div :class="settingStyle">
+      <p>Tick Air</p>
+      <button
+        :class="buttonStyle"
+        @click="$emit('tickX', 'air')"
+      >
+        Click
+      </button>
+    </div>
+    <div :class="settingStyle">
+      <p>Tick Flora</p>
+      <button
+        :class="buttonStyle"
+        @click="$emit('tickX', 'flora')"
+      >
+        Click
+      </button>
+    </div>
+    <div :class="settingStyle">
+      <p>Tick Rodent</p>
+      <button
+        :class="buttonStyle"
+        @click="$emit('tickX', 'rodent')"
+      >
+        Click
+      </button>
+    </div>
     <div
       :class="settingStyle"
       v-if="initialVersion !== selectVersion"
@@ -121,6 +148,7 @@ export default {
     "changeTickSpeed",
     "cheatEnergy",
     "changeVersion",
+    "tickX",
   ],
   computed: {
     buttonStyle() {

@@ -27,23 +27,28 @@
       <template v-if="tab === 'game'"
         ><Gamet
           :theme="theme"
-          :onTickRef="tick.onTickFuncs"
-          :gameData="gameData"
+          :on-tick-ref="tick.onTickFuncs"
+          :tick-rate="currentTickRate"
+          :game-data="gameData"
       /></template>
       <template v-else-if="tab === 'settings'">
         <Settingst
           :theme="theme"
-          :secondsUntilSave="generalData.secondsUntilSave"
-          :initial-tick-rate="tick.tickRate"
+          :seconds-until-save="generalData.secondsUntilSave"
+          :initial-tick-rate="currentTickRate"
           :initial-version="generalData.version"
           @manual-save="saveGame"
           @change-theme="() => $emit('changeTheme')"
           @change-tick-speed="changeTickSpeed"
           @cheat-energy="
             () => {
-              gameData.resources.energy *= 2;
+              const { resources } = gameData;
+              resources.energy > 0
+                ? (resources.energy *= 2)
+                : (resources.energy = 20);
             }
           "
+          @tick-x="cheatTick"
           @change-version="changeVersionEmit"
         />
       </template>
@@ -60,6 +65,7 @@ import Gamet from "./Game/tGame.vue";
 import Settingst from "./Game/tSettings.vue";
 
 import CryptoJS from "crypto-js";
+import { airTick, floraTick, rodentTick } from "../utils";
 
 export default {
   name: "Game",
@@ -134,6 +140,10 @@ export default {
         "light-button-1": this.theme === "light",
         "dark-button-1": this.theme === "dark",
       };
+    },
+    currentTickRate() {
+      const { tickRate } = this.tick;
+      return Number(tickRate) === tickRate ? tickRate : 250;
     },
   },
   methods: {
@@ -240,25 +250,28 @@ export default {
             if (skills.air > 0) {
               onTickFuncs.air = {
                 func(tickRate) {
-                  const energyCost = 20;
+                  const { energyCost, timePerProgress, func } = airTick();
                   if (resources.energy >= energyCost) {
                     this.progress += tickRate;
-                    if (this.progress >= 2000) {
-                      const energyBaseGain = 1;
-                      const energyGainPerLevel = 1;
-                      const beforeSoftcap = Math.min(100, skills.air);
-                      const afterSoftcap = skills.air - beforeSoftcap;
-                      resources.energy +=
-                        energyBaseGain +
-                        energyGainPerLevel *
-                          (beforeSoftcap -
-                            1 +
-                            Math.floor(Math.sqrt(afterSoftcap / 2))) -
-                        energyCost;
-                      skills.air++;
-                      this.progress -= 2000;
+                    if (this.progress >= timePerProgress) {
+                      func({
+                        energy: {
+                          get current() {
+                            return resources.energy;
+                          },
+                          next: (val) => (resources.energy = val),
+                        },
+                        air: {
+                          get current() {
+                            return skills.air;
+                          },
+                          next: (val) => (skills.air = val),
+                        },
+                      });
+                      this.progress = 0;
                     }
-                  } else if (this.progress < 2000) this.progress += tickRate;
+                  } else if (this.progress < timePerProgress)
+                    this.progress += tickRate;
                 },
                 progress: Math.floor(skillTicks.air / tickRate) * tickRate,
               };
@@ -275,25 +288,28 @@ export default {
             if (skills.air > 0) {
               onTickFuncs.flora = {
                 func(tickRate) {
-                  const energyCost = 1000;
+                  const { energyCost, timePerProgress, func } = floraTick();
                   if (resources.energy >= energyCost) {
                     this.progress += tickRate;
-                    if (this.progress >= 120000) {
-                      const energyBaseGain = 200;
-                      const energyGainPerLevel = 45;
-                      const beforeSoftcap = Math.min(100, skills.flora);
-                      const afterSoftcap = skills.flora - beforeSoftcap;
-                      resources.energy +=
-                        energyBaseGain +
-                        energyGainPerLevel *
-                          (beforeSoftcap -
-                            1 +
-                            Math.floor(Math.sqrt(afterSoftcap / 2))) -
-                        energyCost;
-                      skills.flora++;
-                      this.progress -= 120000;
+                    if (this.progress >= timePerProgress) {
+                      func({
+                        energy: {
+                          get current() {
+                            return resources.energy;
+                          },
+                          next: (val) => (resources.energy = val),
+                        },
+                        flora: {
+                          get current() {
+                            return skills.flora;
+                          },
+                          next: (val) => (skills.flora = val),
+                        },
+                      });
+                      this.progress = 0;
                     }
-                  } else if (this.progress < 120000) this.progress += tickRate;
+                  } else if (this.progress < timePerProgress)
+                    this.progress += tickRate;
                 },
                 progress: Math.floor(skillTicks.flora / tickRate) * tickRate,
               };
@@ -304,40 +320,49 @@ export default {
       };
       onTickFuncs.unlockRodent = {
         func(tickRate, deleteFunc) {
-          if (skills.rodent >= 0 || resources.energy >= 100000) {
+          if (
+            skills.rodent >= 0 ||
+            resources.energy >= 100000 ||
+            resources.mass >= 0
+          ) {
             deleteFunc();
             skills.rodent = Math.max(0, skills.rodent);
+            resources.mass = Math.max(0, resources.mass);
             if (skills.rodent > 0) {
               onTickFuncs.rodent = {
                 func(tickRate) {
-                  const energyCost = 1000000;
-                  if (resources.energy >= energyCost) {
+                  const { energyCost, massCost, timePerProgress, func } =
+                    rodentTick();
+                  if (
+                    resources.energy >= energyCost &&
+                    resources.mass >= massCost
+                  ) {
                     this.progress += tickRate;
-                    if (this.progress >= 600000) {
-                      const energyBaseGain = 10000;
-                      const energyGainPerLevel = 20000;
-                      const massBaseGain = 1;
-                      const massGainPerLevel = 0.1;
-                      const beforeSoftcap = Math.min(100, skills.rodent);
-                      const afterSoftcap = skills.rodent - beforeSoftcap;
-                      resources.energy +=
-                        energyBaseGain +
-                        energyGainPerLevel * (beforeSoftcap - 1) +
-                        energyGainPerLevel *
-                          Math.floor(Math.sqrt(afterSoftcap / 2)) -
-                        energyCost;
-                      resources.mass +=
-                        massBaseGain +
-                        Math.floor(
-                          massGainPerLevel *
-                            (beforeSoftcap -
-                              1 +
-                              Math.floor(Math.sqrt(afterSoftcap / 2)))
-                        );
-                      skills.rodent++;
-                      this.progress -= 600000;
+                    if (this.progress >= timePerProgress) {
+                      func({
+                        energy: {
+                          get current() {
+                            return resources.energy;
+                          },
+                          next: (val) => (resources.energy = val),
+                        },
+                        mass: {
+                          get current() {
+                            return resources.mass;
+                          },
+                          next: (val) => (resources.mass = val),
+                        },
+                        rodent: {
+                          get current() {
+                            return skills.rodent;
+                          },
+                          next: (val) => (skills.rodent = val),
+                        },
+                      });
+                      this.progress = 0;
                     }
-                  } else if (this.progress < 600000) this.progress += tickRate;
+                  } else if (this.progress < timePerProgress)
+                    this.progress += tickRate;
                 },
                 progress: Math.floor(skillTicks.rodent / tickRate) * tickRate,
               };
@@ -351,6 +376,72 @@ export default {
       this.generalData.version = newVersion;
       this.saveGame();
       window.location.reload();
+    },
+    cheatTick(tick) {
+      const { skills, resources } = this.gameData;
+      switch (tick) {
+        case "air": {
+          airTick().func({
+            energy: {
+              get current() {
+                return resources.energy;
+              },
+              next: (val) => (resources.energy = val),
+            },
+            air: {
+              get current() {
+                return skills.air;
+              },
+              next: (val) => (skills.air = val),
+            },
+          });
+          break;
+        }
+        case "flora": {
+          floraTick().func({
+            energy: {
+              get current() {
+                return resources.energy;
+              },
+              next: (val) => (resources.energy = val),
+            },
+            flora: {
+              get current() {
+                return skills.flora;
+              },
+              next: (val) => (skills.flora = val),
+            },
+          });
+          break;
+        }
+        case "rodent": {
+          rodentTick().func({
+            energy: {
+              get current() {
+                return resources.energy;
+              },
+              next: (val) => (resources.energy = val),
+            },
+            mass: {
+              get current() {
+                return resources.mass;
+              },
+              next: (val) => (resources.mass = val),
+            },
+            rodent: {
+              get current() {
+                return skills.rodent;
+              },
+              next: (val) => (skills.rodent = val),
+            },
+          });
+          break;
+        }
+        default: {
+          console.log(`What is ${tick}?`);
+          break;
+        }
+      }
     },
   },
   emits: ["changeTheme"],
