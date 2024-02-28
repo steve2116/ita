@@ -97,13 +97,7 @@ export default {
       selectVersion: this.initialVersion,
     };
   },
-  emits: [
-    "changeTheme",
-    "manualSave",
-    "changeTickSpeed",
-    "cheatEnergy",
-    "changeVersion",
-  ],
+  emits: ["changeTheme", "manualSave", "changeTickSpeed", "changeVersion"],
   computed: {
     buttonStyle() {
       return {

@@ -106,6 +106,20 @@
   border: var(--border-width) solid black;
 }
 
+.light-progress-empty {
+  background-color: whitesmoke;
+  border: 1px solid rgb(93, 44, 0);
+}
+
+.light-progress-bar {
+  background-color: rgb(227, 173, 39);
+}
+
+.light-progress-circle {
+  background-color: rgb(247, 239, 218);
+  border: 1px solid rgb(110, 110, 107);
+}
+
 .dark-font-1 {
   color: rgb(232, 220, 217);
 }
@@ -145,4 +159,18 @@
   color: black;
   background-color: rgb(232, 180, 66);
   border: var(--border-width) solid rgb(147, 130, 140);
+}
+
+.dark-progress-empty {
+  background-color: rgb(79, 12, 156);
+  border: 1px solid rgb(203, 152, 223);
+}
+
+.dark-progress-bar {
+  background-color: rgb(145, 72, 180);
+}
+
+.dark-progress-circle {
+  background-color: rgb(62, 17, 105);
+  border: 1px solid rgb(238, 162, 249);
 }
