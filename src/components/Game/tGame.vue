@@ -5,85 +5,118 @@
       <p v-if="unlockMass">Mass: {{ mass }}</p>
       <template v-else />
     </div>
-    <div class="pressers">
-      <button
-        :class="clickerButtonStyle"
-        @click="clickEnergy"
-        v-on:keydown.enter.prevent="holdEnergy"
-      >
-        Exist faster
-      </button>
-      <template v-if="unlockAir && gameData.skills.air === 0">
-        <br />
+    <template v-if="showShop">
+      <div class="pressers">
         <button
           :class="clickerButtonStyle"
-          @click="clickAir"
+          @click="() => (showShop = false)"
         >
-          Start breathing?
+          Exit
         </button>
-      </template>
-      <template v-else />
-      <template v-if="unlockFlora && gameData.skills.flora === 0">
-        <br />
-        <button
-          :class="clickerButtonStyle"
-          @click="clickFlora"
-        >
-          Start foraging?
-        </button>
-      </template>
-      <template v-else />
-      <template v-if="unlockRodent && gameData.skills.rodent === 0">
-        <br />
-        <button
-          :class="clickerButtonStyle"
-          @click="clickRodent"
-        >
-          Hunt?
-        </button>
-      </template>
-      <template v-else />
-    </div>
-    <template v-if="unlockAir && gameData.skills.air !== 0">
-      <br />
-      <p>Air: {{ air }}</p>
-      <ProgressBar
+      </div>
+      <Shop
         :theme="theme"
-        :info="airProgressBar"
+        :owned-items="gameData.evolutions.items"
+        :skills="gameData.skills"
+        @purchase="shopPurchase"
       />
     </template>
-    <template v-else />
-    <template v-if="unlockFlora && gameData.skills.flora !== 0">
-      <br />
-      <p>Flora: {{ flora }}</p>
-      <p :class="floraPBar">
+    <template v-else>
+      <div class="pressers">
+        <button
+          :class="shopButtonStyle"
+          @click="() => (showShop = true)"
+          :disabled="hideShop"
+        >
+          Evolve Menu
+        </button>
+        <button
+          :class="clickerButtonStyle"
+          @click="clickEnergy"
+          v-on:keydown.enter.prevent="holdEnergy"
+        >
+          Exist faster
+        </button>
+        <template v-if="unlockAir && gameData.skills.air === 0">
+          <br />
+          <button
+            :class="clickerButtonStyle"
+            @click="clickAir"
+          >
+            Start breathing?
+          </button>
+        </template>
+        <template v-else />
+        <template v-if="unlockFlora && gameData.skills.flora === 0">
+          <br />
+          <button
+            :class="clickerButtonStyle"
+            @click="clickFlora"
+          >
+            Start foraging?
+          </button>
+        </template>
+        <template v-else />
+        <template v-if="unlockRodent && gameData.skills.rodent === 0">
+          <br />
+          <button
+            :class="clickerButtonStyle"
+            @click="clickRodent"
+          >
+            Hunt?
+          </button>
+        </template>
+        <template v-else />
+      </div>
+      <template v-if="unlockAir && gameData.skills.air !== 0">
+        <br />
+        <p>Air: {{ air }}</p>
         <ProgressBar
           :theme="theme"
-          :info="floraProgressBar"
+          :info="airProgressBar"
         />
-      </p>
+      </template>
+      <template v-else />
+      <template v-if="unlockFlora && gameData.skills.flora !== 0">
+        <br />
+        <p>Flora: {{ flora }}</p>
+        <p :class="floraPBar">
+          <ProgressBar
+            :theme="theme"
+            :info="floraProgressBar"
+          />
+        </p>
+      </template>
+      <template v-else />
+      <template v-if="unlockRodent && gameData.skills.rodent !== 0">
+        <br />
+        <p>Rodent: {{ rodent }}</p>
+        <ProgressBar
+          :theme="theme"
+          :info="rodentProgressBar"
+        />
+      </template>
+      <template v-else />
     </template>
-    <template v-else />
-    <template v-if="unlockRodent && gameData.skills.rodent !== 0">
-      <br />
-      <p>Rodent: {{ rodent }}</p>
-      <ProgressBar
-        :theme="theme"
-        :info="rodentProgressBar"
-      />
-    </template>
-    <template v-else />
   </div>
 </template>
 
 <script>
 import ProgressBar from "../../elements/progress-bar.vue";
-import { airTick, floraTick, numberAsReadable, rodentTick } from "../../utils";
+import Shop from "./Shop.vue";
+import {
+  Information,
+  airTick,
+  floraTick,
+  numberAsReadable,
+  rodentTick,
+} from "../../utils";
 
 export default {
   name: "Gamet",
   components: {
     ProgressBar,
+    Shop,
   },
   props: {
     theme: {
@@ -102,6 +135,10 @@ export default {
       type: Object,
       required: true,
     },
+    getInfo: {
+      type: Information,
+      required: true,
+    },
   },
   data() {
     return {
@@ -109,6 +146,7 @@ export default {
         energy: false,
       },
       barLength: 50,
+      showShop: false,
     };
   },
   computed: {
@@ -244,11 +282,25 @@ export default {
         };
       }
     },
+    hideShop() {
+      try {
+        const { air } = this.gameData.skills;
+        return false;
+      } catch (e) {
+        return true;
+      }
+    },
+    shopButtonStyle() {
+      if (this.hideShop) return this.clickerButtonStyle;
+      return Object.assign({}, this.clickerButtonStyle, {
+        invisible: this.gameData.skills.air < 15,
+      });
+    },
   },
   methods: {
     clickEnergy() {
       try {
-        this.gameData.resources.energy++;
+        this.gameData.resources.energy += this.getInfo.energyClick;
       } catch (e) {
         console.error(e);
       }
@@ -269,10 +321,11 @@ export default {
     },
     clickAir() {
       const { skills, resources } = this.gameData;
+      const { getInfo } = this;
       skills.air = 1;
       this.onTickRef.air = {
         func(tickRate) {
-          const { energyCost, timePerProgress, func } = airTick();
+          const { energyCost, timePerProgress, func } = airTick(getInfo);
           if (resources.energy >= energyCost) {
             this.progress += tickRate;
             if (this.progress >= timePerProgress) {
@@ -281,13 +334,19 @@ export default {
                   get current() {
                     return resources.energy;
                   },
-                  next: (val) => (resources.energy = val),
+                  next(val) {
+                    if (typeof val === "number") resources.energy = val;
+                    else resources.energy = val(resources.energy);
+                  },
                 },
                 air: {
                   get current() {
                     return skills.air;
                   },
-                  next: (val) => (skills.air = val),
+                  next(val) {
+                    if (typeof val === "number") skills.air = val;
+                    else skills.air = val(skills.air);
+                  },
                 },
               });
               this.progress = 0;
@@ -299,10 +358,11 @@ export default {
     },
     clickFlora() {
       const { skills, resources } = this.gameData;
+      const { getInfo } = this;
       skills.flora = 1;
       this.onTickRef.flora = {
         func(tickRate) {
-          const { energyCost, timePerProgress, func } = floraTick();
+          const { energyCost, timePerProgress, func } = floraTick(getInfo);
           if (resources.energy >= energyCost) {
             this.progress += tickRate;
             if (this.progress >= timePerProgress) {
@@ -311,13 +371,19 @@ export default {
                   get current() {
                     return resources.energy;
                   },
-                  next: (val) => (resources.energy = val),
+                  next(val) {
+                    if (typeof val === "number") resources.energy = val;
+                    else resources.energy = val(resources.energy);
+                  },
                 },
                 flora: {
                   get current() {
                     return skills.flora;
                   },
-                  next: (val) => (skills.flora = val),
+                  next(val) {
+                    if (typeof val === "number") skills.flora = val;
+                    else skills.flora = val(skills.flora);
+                  },
                 },
               });
               this.progress = 0;
@@ -329,11 +395,13 @@ export default {
     },
     clickRodent() {
       const { skills, resources } = this.gameData;
+      const { getInfo } = this;
       skills.rodent = 1;
       resources.mass = 0;
       this.onTickRef.rodent = {
         func(tickRate) {
-          const { energyCost, massCost, timePerProgress, func } = rodentTick();
+          const { energyCost, massCost, timePerProgress, func } =
+            rodentTick(getInfo);
           if (resources.energy >= energyCost && resources.mass >= massCost) {
             this.progress += tickRate;
             if (this.progress >= timePerProgress) {
@@ -342,19 +410,28 @@ export default {
                   get current() {
                     return resources.energy;
                   },
-                  next: (val) => (resources.energy = val),
+                  next(val) {
+                    if (typeof val === "number") resources.energy = val;
+                    else resources.energy = val(resources.energy);
+                  },
                 },
                 mass: {
                   get current() {
                     return resources.mass;
                   },
-                  next: (val) => (resources.mass = val),
+                  next(val) {
+                    if (typeof val === "number") resources.mass = val;
+                    else resources.mass = val(resources.mass);
+                  },
                 },
                 rodent: {
                   get current() {
                     return skills.rodent;
                   },
-                  next: (val) => (skills.rodent = val),
+                  next(val) {
+                    if (typeof val === "number") skills.rodent = val;
+                    else skills.rodent = val(skills.rodent);
+                  },
                 },
               });
               this.progress = 0;
@@ -363,6 +440,32 @@ export default {
         },
         progress: 0,
       };
+    },
+    shopPurchase(item) {
+      try {
+        const { resources, evolutions, skills } = this.gameData;
+        const { name, price, unlock } = item;
+        if (
+          Object.entries(unlock).every(
+            ([type, value]) => skills[type] >= value
+          ) &&
+          Object.entries(price).every(
+            ([type, value]) => resources[type] >= value
+          )
+        ) {
+          Object.entries(price).forEach(([type, value]) => {
+            resources[type] -= value;
+          });
+          evolutions.items.push(name);
+        }
+      } catch (e) {
+        try {
+          const { name } = item;
+          console.error(`Error attempting purchase of ${name}`);
+        } catch (e) {
+          console.error("Error attempting purchase");
+        }
+      }
     },
   },
 };
@@ -395,5 +498,10 @@ button {
   border-radius: calc(var(--un) * 5);
   font-size: 1.15rem;
   cursor: pointer;
+}
+.invisible {
+  background-color: transparent;
+  color: transparent;
+  border: none;
 }
 </style>

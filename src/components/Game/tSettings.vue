@@ -98,7 +98,11 @@ import { secondsAsReadable } from "../../utils.js";
       v-if="initialVersion !== selectVersion"
     >
       <p>
-        {{ versionIsLower ? "Update game" : "Lost data cannot be recovered" }}
+        {{
+          versionIsLower
+            ? "Update game"
+            : "I do not know why I added this feature, all this does is make you lose data. Do at your own risk."
+        }}
       </p>
       <button
         :class="buttonStyle"

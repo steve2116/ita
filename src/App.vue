@@ -21,47 +21,38 @@ import Game from "./components/Game.vue";
 
 import CryptoJS from "crypto-js";
 
-const currentVersion = "0.0.3";
+const currentVersion = "0.0.4";
 export const versions = {
+  "0.0.4": {
+    version: "0.0.4",
+    theme: "light",
+    tick: { tickRate: 250 },
+    gameData: {
+      resources: { energy: 0, mass: -1 },
+      skills: { air: -1, flora: -1, rodent: -1 },
+      skillTicks: { air: 0, flora: 0, rodent: 0 },
+      evolutions: {
+        items: [],
+      },
+    },
+  },
   "0.0.3": {
     version: "0.0.3",
     theme: "light",
-    tick: {
-      tickRate: 250,
-    },
+    tick: { tickRate: 250 },
     gameData: {
-      resources: {
-        energy: 0,
-        mass: -1,
-      },
-      skills: {
-        air: -1,
-        flora: -1,
-        rodent: -1,
-      },
-      skillTicks: {
-        air: 0,
-        flora: 0,
-        rodent: 0,
-      },
+      resources: { energy: 0, mass: -1 },
+      skills: { air: -1, flora: -1, rodent: -1 },
+      skillTicks: { air: 0, flora: 0, rodent: 0 },
     },
   },
   "0.0.2": {
     version: "0.0.2",
     theme: "light",
-    tick: {
-      tickRate: 250,
-    },
+    tick: { tickRate: 250 },
     gameData: {
-      resources: {
-        energy: 0,
-        mass: -1,
-      },
-      skills: {
-        air: -1,
-        flora: -1,
-        rodent: -1,
-      },
+      resources: { energy: 0, mass: -1 },
+      skills: { air: -1, flora: -1, rodent: -1 },
     },
   },
   "0.0.1": {
@@ -96,6 +87,16 @@ export function updateSaveVersion(gameData, to) {
     case to: {
       return gameData;
     }
+    case "0.0.3": {
+      return updateSaveVersion(
+        {
+          ...gameData,
+          version: "0.0.4",
+          gameData: { ...gameData.gameData, evolutions: { items: [] } },
+        },
+        to
+      );
+    }
     case "0.0.2": {
       return updateSaveVersion(
         {
@@ -103,11 +104,7 @@ export function updateSaveVersion(gameData, to) {
           version: "0.0.3",
           gameData: {
             ...gameData.gameData,
-            skillTicks: {
-              air: 0,
-              flora: 0,
-              rodent: 0,
-            },
+            skillTicks: { air: 0, flora: 0, rodent: 0 },
           },
         },
         to
@@ -131,6 +128,11 @@ export function downdateSaveVersion(gameData, to) {
   switch (gameData.version) {
     case to: {
       return gameData;
+    }
+    case "0.0.4": {
+      const tempGameData = { ...gameData, version: "0.0.3" };
+      delete tempGameData.gameData.evolutions;
+      return downdateSaveVersion(tempGameData, to);
     }
     case "0.0.3": {
       const tempGameData = { ...gameData, version: "0.0.2" };
@@ -220,7 +222,7 @@ export default {
     console.log(
       `loaded game data with version ${oldVersion || "[data not found]"}`
     );
-    if (!newData && oldVersion !== currentVersion)
+    if (!newData && isVersion(oldVersion, currentVersion) === 1)
       console.log(
         `A more recent version is available! Please update your file in settings.`
       );

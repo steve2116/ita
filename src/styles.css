@@ -106,6 +106,23 @@
   border: var(--border-width) solid black;
 }
 
+.light-button-shop-1 {
+  color: black;
+  background-color: rgb(229, 197, 160);
+  border: var(--border-width) solid black;
+}
+
+.light-button-shop-2 {
+  color: black;
+  background-color: rgb(162, 234, 80);
+  border: var(--border-width) solid black;
+}
+
+.light-shop-hover {
+  background-color: rgb(252, 214, 170);
+  color: black;
+}
+
 .light-progress-empty {
   background-color: whitesmoke;
   border: 1px solid rgb(93, 44, 0);
@@ -159,6 +176,23 @@
   color: black;
   background-color: rgb(232, 180, 66);
   border: var(--border-width) solid rgb(147, 130, 140);
+}
+
+.dark-button-shop-1 {
+  color: rgb(232, 220, 217);
+  background-color: rgb(37, 23, 47);
+  border: var(--border-width) solid rgb(147, 130, 140);
+}
+
+.dark-button-shop-2 {
+  color: rgb(232, 220, 217);
+  background-color: rgb(103, 42, 147);
+  border: var(--border-width) solid rgb(147, 130, 140);
+}
+
+.dark-shop-hover {
+  background-color: rgb(252, 214, 170);
+  color: black;
 }
 
 .dark-progress-empty {
