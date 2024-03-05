@@ -24,25 +24,25 @@
       </button>
     </nav>
     <main>
-      <template v-if="tab === 'game'"
-        ><Gamet
-          :theme="theme"
-          :on-tick-ref="tick.onTickFuncs"
-          :tick-rate="currentTickRate"
-          :game-data="gameData"
-      /></template>
-      <template v-else-if="tab === 'settings'">
-        <Settingst
-          :theme="theme"
-          :seconds-until-save="generalData.secondsUntilSave"
-          :initial-tick-rate="currentTickRate"
-          :initial-version="generalData.version"
-          @manual-save="saveGame"
-          @change-theme="() => $emit('changeTheme')"
-          @change-tick-speed="changeTickSpeed"
-          @change-version="changeVersionEmit"
-        />
-      </template>
+      <Gamet
+        v-if="tab === 'game' && getInfo"
+        :theme="theme"
+        :on-tick-ref="tick.onTickFuncs"
+        :tick-rate="currentTickRate"
+        :game-data="gameData"
+        :get-info="getInfo"
+      />
+      <Settingst
+        v-else-if="tab === 'settings'"
+        :theme="theme"
+        :seconds-until-save="generalData.secondsUntilSave"
+        :initial-tick-rate="currentTickRate"
+        :initial-version="generalData.version"
+        @manual-save="saveGame"
+        @change-theme="() => $emit('changeTheme')"
+        @change-tick-speed="changeTickSpeed"
+        @change-version="changeVersionEmit"
+      />
       <template v-else-if="tab === 'credits-info'"
         ><p>Me ( github.com/steve2116 )</p></template
       >
@@ -56,7 +56,7 @@ import Gamet from "./Game/tGame.vue";
 import Settingst from "./Game/tSettings.vue";
 
 import CryptoJS from "crypto-js";
-import { airTick, floraTick, rodentTick } from "../utils";
+import { Information, airTick, floraTick, rodentTick } from "../utils";
 
 export default {
   name: "Game",
@@ -77,9 +77,7 @@ export default {
   data() {
     return {
       tab: "game",
-      /**
-       * @type {Record<string, number>}
-       */
+      /** @type {Record<string, number>} */
       timers: {},
       generalData: {
         secondsUntilSave: 150,
@@ -87,9 +85,7 @@ export default {
       },
       tick: {
         tickRateMin: 50,
-        /**
-         * @type {Record<string, {func: (tickRate: number, deleteFunc: () => void, nameOfFunc: string) => void, progress: number}>}
-         */
+        /** @type {Record<string, {func: (tickRate: number, deleteFunc: () => void, nameOfFunc: string) => void, progress: number}>} */
         onTickFuncs: {},
         onTick() {
           const { tickRate, onTickFuncs } = this;
@@ -99,14 +95,16 @@ export default {
         },
       },
       gameData: {},
+      /** @type {Information} */
+      getInfo: null,
     };
   },
   mounted() {
     const onLoadTimer = setInterval(() => {
       if (typeof this.initialGameData.generalData.new === "boolean") {
+        clearInterval(onLoadTimer);
         const { generalData, tick, gameData } = this.initialGameData;
         const { skillTicks, ...otherGameData } = gameData;
-        clearInterval(onLoadTimer);
         this.generalData = { ...generalData, ...this.generalData };
         this.tick = { ...tick, ...this.tick };
         this.gameData = { ...otherGameData };
@@ -117,6 +115,33 @@ export default {
           this.generalData.secondsUntilSave -= 1;
           if (this.generalData.secondsUntilSave <= 0) this.saveGame();
         }, 1000);
+        const tempGameData = this.gameData;
+        this.getInfo = new Information(
+          {
+            get energy() {
+              return tempGameData.resources.energy;
+            },
+            get mass() {
+              return tempGameData.resources.mass;
+            },
+          },
+          {
+            get air() {
+              return tempGameData.skills.air;
+            },
+            get flora() {
+              return tempGameData.skills.flora;
+            },
+            get rodent() {
+              return tempGameData.skills.rodent;
+            },
+          },
+          {
+            get items() {
+              return tempGameData.evolutions.items;
+            },
+          }
+        );
         this.addMilestones(skillTicks);
       }
     }, 100);
@@ -143,6 +168,36 @@ export default {
         return CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(text));
       };
       switch (this.generalData.version) {
+        case "0.0.4": {
+          let skillTicks = {};
+          ["air", "flora", "rodent"].forEach((skill) => {
+            try {
+              skillTicks[skill] = this.tick.onTickFuncs[skill].progress;
+            } catch (e) {
+              skillTicks[skill] = 0;
+            }
+          });
+          return encrypt(
+            JSON.stringify({
+              version: "0.0.4",
+              theme: this.theme,
+              tick: { tickRate: this.tick.tickRate },
+              gameData: {
+                resources: {
+                  energy: this.gameData.resources.energy,
+                  mass: this.gameData.resources.mass,
+                },
+                skills: {
+                  air: this.gameData.skills.air,
+                  flora: this.gameData.skills.flora,
+                  rodent: this.gameData.skills.rodent,
+                },
+                skillTicks,
+                evolutions: { items: this.gameData.evolutions.items },
+              },
+            })
+          );
+        }
         case "0.0.3": {
           let skillTicks = {};
           ["air", "flora", "rodent"].forEach((skill) => {
@@ -156,9 +211,7 @@ export default {
             JSON.stringify({
               version: "0.0.3",
               theme: this.theme,
-              tick: {
-                tickRate: this.tick.tickRate,
-              },
+              tick: { tickRate: this.tick.tickRate },
               gameData: {
                 resources: {
                   energy: this.gameData.resources.energy,
@@ -179,9 +232,7 @@ export default {
             JSON.stringify({
               version: "0.0.2",
               theme: this.theme,
-              tick: {
-                tickRate: this.tick.tickRate,
-              },
+              tick: { tickRate: this.tick.tickRate },
               gameData: {
                 resources: {
                   energy: this.gameData.resources.energy,
@@ -198,10 +249,7 @@ export default {
         }
         case "0.0.1": {
           return encrypt(
-            JSON.stringify({
-              version: "0.0.1",
-              theme: this.theme,
-            })
+            JSON.stringify({ version: "0.0.1", theme: this.theme })
           );
         }
       }
@@ -233,6 +281,7 @@ export default {
     addMilestones(skillTicks) {
       const { skills, resources } = this.gameData;
       const { onTickFuncs } = this.tick;
+      const { getInfo } = this;
       onTickFuncs.unlockAir = {
         func(tickRate, deleteFunc) {
           if (skills.air >= 0 || resources.energy >= 10) {
@@ -241,7 +290,8 @@ export default {
             if (skills.air > 0) {
               onTickFuncs.air = {
                 func(tickRate) {
-                  const { energyCost, timePerProgress, func } = airTick();
+                  const { energyCost, timePerProgress, func } =
+                    airTick(getInfo);
                   if (resources.energy >= energyCost) {
                     this.progress += tickRate;
                     if (this.progress >= timePerProgress) {
@@ -250,13 +300,19 @@ export default {
                           get current() {
                             return resources.energy;
                           },
-                          next: (val) => (resources.energy = val),
+                          next(val) {
+                            if (typeof val === "number") resources.energy = val;
+                            else resources.energy = val(resources.energy);
+                          },
                         },
                         air: {
                           get current() {
                             return skills.air;
                           },
-                          next: (val) => (skills.air = val),
+                          next(val) {
+                            if (typeof val === "number") skills.air = val;
+                            else skills.air = val(skills.air);
+                          },
                         },
                       });
                       this.progress = 0;
@@ -279,7 +335,8 @@ export default {
             if (skills.air > 0) {
               onTickFuncs.flora = {
                 func(tickRate) {
-                  const { energyCost, timePerProgress, func } = floraTick();
+                  const { energyCost, timePerProgress, func } =
+                    floraTick(getInfo);
                   if (resources.energy >= energyCost) {
                     this.progress += tickRate;
                     if (this.progress >= timePerProgress) {
@@ -288,13 +345,19 @@ export default {
                           get current() {
                             return resources.energy;
                           },
-                          next: (val) => (resources.energy = val),
+                          next(val) {
+                            if (typeof val === "number") resources.energy = val;
+                            else resources.energy = val(resources.energy);
+                          },
                         },
                         flora: {
                           get current() {
                             return skills.flora;
                           },
-                          next: (val) => (skills.flora = val),
+                          next(val) {
+                            if (typeof val === "number") skills.flora = val;
+                            else skills.flora = val(skills.flora);
+                          },
                         },
                       });
                       this.progress = 0;
@@ -323,7 +386,7 @@ export default {
               onTickFuncs.rodent = {
                 func(tickRate) {
                   const { energyCost, massCost, timePerProgress, func } =
-                    rodentTick();
+                    rodentTick(getInfo);
                   if (
                     resources.energy >= energyCost &&
                     resources.mass >= massCost
@@ -335,19 +398,28 @@ export default {
                           get current() {
                             return resources.energy;
                           },
-                          next: (val) => (resources.energy = val),
+                          next(val) {
+                            if (typeof val === "number") resources.energy = val;
+                            else resources.energy = val(resources.energy);
+                          },
                         },
                         mass: {
                           get current() {
                             return resources.mass;
                           },
-                          next: (val) => (resources.mass = val),
+                          next(val) {
+                            if (typeof val === "number") resources.mass = val;
+                            else resources.mass = val(resources.mass);
+                          },
                         },
                         rodent: {
                           get current() {
                             return skills.rodent;
                           },
-                          next: (val) => (skills.rodent = val),
+                          next(val) {
+                            if (typeof val === "number") skills.rodent = val;
+                            else skills.rodent = val(skills.rodent);
+                          },
                         },
                       });
                       this.progress = 0;
