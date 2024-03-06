@@ -14,20 +14,21 @@
       >
         <button
           :class="buttonStyle(name)"
-          @click="
-            $emit('purchase', { name, price: item.price, unlock: item.unlock })
-          "
-          v-on:mouseenter="showHover[name].button = true"
+          @click="() => buttonClick(name, item)"
+          @touchstart="() => buttonTouch(name, item)"
+          v-on:mouseenter="touch || (showHover[name].button = true)"
+          v-on:focus="touch || (showHover[name].button = true)"
           v-on:mouseleave="showHover[name].button = false"
+          v-on:blur="showHover[name].button = false"
           :disabled="ownedItems.includes(name)"
         >
           {{ item.name }}
         </button>
         <div
-          v-show="showHover[name].button || showHover[name].hover"
+          v-show="Object.values(showHover[name]).some((x) => x)"
           :class="hoverStyle"
-          v-on:mouseenter="showHover[name].hover = true"
-          v-on:mouseleave="showHover[name].hover = false"
+          v-on:mouseenter="touch || (showHover[name].hover = true)"
+          v-on:mouseleave="touch || (showHover[name].hover = false)"
         >
           <template v-if="ownedItems.includes(name)" />
           <template
@@ -177,6 +178,7 @@ export default {
         (acc, key) => ({ ...acc, [key]: { button: false, hover: false } }),
         {}
       ),
+      touch: false,
     };
   },
   computed: {
@@ -204,6 +206,24 @@ export default {
   },
   methods: {
     numberAsReadable,
+    buttonClick(name, item) {
+      if (!this.touch && Object.values(this.showHover[name]).some((x) => x))
+        this.$emit("purchase", {
+          name,
+          price: item.price,
+          unlock: item.unlock,
+        });
+    },
+    buttonTouch(name, item) {
+      this.touch = true;
+      if (this.showHover[name].button) {
+        this.$emit("purchase", {
+          name,
+          price: item.price,
+          unlock: item.unlock,
+        });
+      } else this.showHover[name].button = true;
+    },
   },
   emits: ["purchase"],
 };
