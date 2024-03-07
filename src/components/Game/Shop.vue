@@ -16,10 +16,10 @@
           :class="buttonStyle(name)"
           @click="() => buttonClick(name, item)"
           @touchstart="() => buttonTouch(name, item)"
-          v-on:mouseenter="touch || (showHover[name].button = true)"
-          v-on:focus="touch || (showHover[name].button = true)"
-          v-on:mouseleave="showHover[name].button = false"
-          v-on:blur="showHover[name].button = false"
+          v-on:mouseenter="changeShowHover(name, 'button')"
+          v-on:mouseleave="changeShowHover(name, 'button', false, false)"
+          v-on:focus="changeShowHover(name, 'button', true)"
+          v-on:blur="unShowHover(name)"
           :disabled="ownedItems.includes(name)"
         >
           {{ item.name }}
@@ -27,8 +27,10 @@
         <div
           v-show="Object.values(showHover[name]).some((x) => x)"
           :class="hoverStyle"
-          v-on:mouseenter="touch || (showHover[name].hover = true)"
-          v-on:mouseleave="touch || (showHover[name].hover = false)"
+          @click="() => unShowHover(name)"
+          @touchend="() => unShowHover(name)"
+          v-on:mouseenter="changeShowHover(name, 'hover')"
+          v-on:mouseleave="changeShowHover(name, 'hover', false, false)"
         >
           <template v-if="ownedItems.includes(name)" />
           <template
@@ -206,6 +208,15 @@ export default {
   },
   methods: {
     numberAsReadable,
+    changeShowHover(name, type, touch = true, value = true) {
+      if (!touch || !this.touch) this.showHover[name][type] = value;
+    },
+    unShowHover(name) {
+      const { showHover } = this;
+      Object.keys(showHover[name]).forEach(
+        (key) => (showHover[name][key] = false)
+      );
+    },
     buttonClick(name, item) {
       if (!this.touch && Object.values(this.showHover[name]).some((x) => x))
         this.$emit("purchase", {
