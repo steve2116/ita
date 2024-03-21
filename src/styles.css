@@ -23,9 +23,7 @@
   );
 }
 
-/*
---min-height-of-game * 0.85
- */
+/* --min-height-of-game * 0.85 */
 @media (max-width: 425px) {
   :root {
     --border-width: 2px;
@@ -137,6 +135,11 @@
   border: 1px solid rgb(110, 110, 107);
 }
 
+.light-stats-hover {
+  background-color: rgb(231, 213, 110);
+  color: black;
+}
+
 .dark-font-1 {
   color: rgb(232, 220, 217);
 }
@@ -191,8 +194,8 @@
 }
 
 .dark-shop-hover {
-  background-color: rgb(252, 214, 170);
-  color: black;
+  color: rgb(232, 220, 217);
+  background-color: rgb(34, 16, 44);
 }
 
 .dark-progress-empty {
@@ -207,4 +210,9 @@
 .dark-progress-circle {
   background-color: rgb(62, 17, 105);
   border: 1px solid rgb(238, 162, 249);
+}
+
+.dark-stats-hover {
+  background-color: rgb(79, 12, 156);
+  color: rgb(232, 220, 217);
 }

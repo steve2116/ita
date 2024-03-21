@@ -11,7 +11,7 @@ const floraBaseInfo = {
   energyCost: 1000,
   energyBaseGain: 200,
   energyGainPerLevel: 45,
-  softcap: 100,
+  softcap: 50,
   timePerProgress: 120000,
 };
 const rodentBaseInfo = {
@@ -21,7 +21,7 @@ const rodentBaseInfo = {
   massCost: 0,
   massBaseGain: 1,
   massGainPerLevel: 0.1,
-  softcap: 100,
+  softcap: 10,
   timePerProgress: 600000,
 };
 const informationClassChecker =
@@ -36,17 +36,18 @@ const informationClassChecker =
  *  energyGainPerLevel: number;
  *  timePerProgress: number;
  *  func: (refs: {
- *      energy: {current: number, next: (val: number | (current: number) => number) => void},
- *      air: {current: number, next: (val: number | (current: number) => number) => void}
+ *      energy: {current: number, add: (vals: {gain: number, loss: number}) => void},
+ *      air: {current: number, add: (vals: {gain: number, loss: number}) => void}
  *    }) => void;
- * }} An object containing info about [ Air ] and the function to run each tick - Each value in func should have a getter `get current()` and a function to change the value `next(val: number)`
+ * }} An object containing info about [ Air ] and the function to run each tick - Each value in func should have a getter `get current()` and setter `set current()` and a function to increment the value `add(vals: {gain: number, loss: number})`
  */
 function airTick(
   /** @type {Information} */
   getInfo
 ) {
-  const { energyBaseGain, energyGainPerLevel, timePerProgress } = airBaseInfo;
-  const { energyCost } = getInfo.airCost;
+  const { energyBaseGain, energyGainPerLevel } = airBaseInfo;
+  const { energy: energyCost } = getInfo.airCost;
+  const timePerProgress = getInfo.airTime;
   function func(refs) {
     const argNames = ["energy", "air"];
     if (
@@ -58,7 +59,7 @@ function airTick(
     if (
       !argNames.every((key) => {
         try {
-          const { current, next } = refs[key];
+          const { current, add } = refs[key];
           return true;
         } catch (e) {
           return false;
@@ -69,22 +70,11 @@ function airTick(
       return;
     }
     const { energy, air } = refs;
-    const beforeSoftcap = Math.min(getInfo.airSoftCap, air.current);
-    const afterSoftcap = air.current - beforeSoftcap;
-    const beforeGain = getInfo.airMulti * (beforeSoftcap - 1);
-    const afterGain = getInfo.airCap({
-      energy: getInfo.airMulti * afterSoftcap,
-    }).energy;
 
-    energy.next(
-      (curr) =>
-        curr +
-        Math.floor(
-          energyBaseGain + energyGainPerLevel * (beforeGain + afterGain)
-        ) -
-        energyCost
-    );
-    air.next((curr) => curr + 1);
+    const { energy: energyGain } = getInfo.airGain;
+
+    energy.add({ gain: energyGain, loss: energyCost });
+    air.add({ gain: 1 });
   }
   return {
     energyCost,
@@ -102,17 +92,18 @@ function airTick(
  *  energyGainPerLevel: number;
  *  timePerProgress: number;
  *  func: (refs: {
- *    energy: {current: number, next: (val: number | (current: number) => number) => void},
- *    flora: {current: number, next: (val: number | (current: number) => number) => void}}
+ *    energy: {current: number, add: (vals: {gain: number, loss: number}) => void},
+ *    flora: {current: number, add: (vals: {gain: number, loss: number}) => void}}
  *   ) => void;
- * }} An object containing info about [ Flora ] and the function to run each tick - Each value in func should have a getter `get current()` and a function to change the value `next(val: number)`
+ * }} An object containing info about [ Flora ] and the function to run each tick - Each value in func should have a getter `get current()` and setter `set current()` and a function to increment the value `add(vals: {gain: number, loss: number})`
  */
 function floraTick(
   /** @type {Information} */
   getInfo
 ) {
-  const { energyBaseGain, energyGainPerLevel, timePerProgress } = floraBaseInfo;
-  const { energyCost } = getInfo.floraCost;
+  const { energyBaseGain, energyGainPerLevel } = floraBaseInfo;
+  const { energy: energyCost } = getInfo.floraCost;
+  const timePerProgress = getInfo.floraTime;
   function func(refs) {
     const argNames = ["energy", "flora"];
     if (
@@ -124,7 +115,7 @@ function floraTick(
     if (
       !argNames.every((key) => {
         try {
-          const { current, next } = refs[key];
+          const { current, add } = refs[key];
           return true;
         } catch (e) {
           return false;
@@ -135,21 +126,9 @@ function floraTick(
       return;
     }
     const { energy, flora } = refs;
-    const beforeSoftcap = Math.min(100, flora.current);
-    const afterSoftcap = flora.current - beforeSoftcap;
-    const beforeGain = getInfo.floraMulti * (beforeSoftcap - 1);
-    const afterGain = getInfo.floraCap({
-      energy: getInfo.floraMulti * afterSoftcap,
-    }).energy;
-    energy.next(
-      (curr) =>
-        curr +
-        Math.floor(
-          energyBaseGain + energyGainPerLevel * (beforeGain + afterGain)
-        ) -
-        energyCost
-    );
-    flora.next((curr) => curr + 1);
+    const { energy: energyGain } = getInfo.floraGain;
+    energy.add({ gain: energyGain, loss: energyCost });
+    flora.add({ gain: 1 });
   }
   return {
     energyCost,
@@ -169,22 +148,17 @@ function floraTick(
  * massBaseGain: number;
  * massGainPerLevel: number;
  * timePerProgress: number;
- * func: ({energy: {current: number, next: (val: number | (current: number) => number) => void}, mass: {current: number, next: (val: number | (current: number) => number) => void}, rodent: {current: number, next: (val: number | (current: number) => number) => void}}) => void;
- * }} - An object containing info about [ Rodent ] and the function to run each tick.
- * - Each value in func should have a getter `get current()` and a function to change the value `next(val: number)`
+ * func: ({energy: {current: number, add: (vals: {gain: number, loss: number}) => void}, mass: {current: number, add: (vals: {gain: number, loss: number}) => void}, rodent: {current: number, add: (vals: {gain: number, loss: number}) => void}}) => void;
+ * }} - An object containing info about [ Rodent ] and the function to run each tick - Each value in func should have a getter `get current()` and setter `set current()` and a function to increment the value `add(vals: {gain: number, loss: number})`
  */
 function rodentTick(
   /** @type {Information} */
   getInfo
 ) {
-  const {
-    energyBaseGain,
-    energyGainPerLevel,
-    massBaseGain,
-    massGainPerLevel,
-    timePerProgress,
-  } = rodentBaseInfo;
-  const { energyCost, massCost } = getInfo.rodentCost;
+  const { energyBaseGain, energyGainPerLevel, massBaseGain, massGainPerLevel } =
+    rodentBaseInfo;
+  const { energy: energyCost, mass: massCost } = getInfo.rodentCost;
+  const timePerProgress = getInfo.rodentTime;
   function func(refs) {
     const argNames = ["energy", "mass", "rodent"];
     if (
@@ -196,7 +170,7 @@ function rodentTick(
     if (
       !argNames.every((key) => {
         try {
-          const { current, next } = refs[key];
+          const { current, add } = refs[key];
           return true;
         } catch (e) {
           return false;
@@ -207,29 +181,10 @@ function rodentTick(
       return;
     }
     const { energy, mass, rodent } = refs;
-    const beforeSoftcap = Math.min(100, rodent.current);
-    const afterSoftcap = rodent.current - beforeSoftcap;
-    const beforeGain = getInfo.rodentMulti * (beforeSoftcap - 1);
-    const afterGain = getInfo.rodentCap({
-      energy: getInfo.rodentMulti * afterSoftcap,
-      mass: getInfo.rodentMulti * afterSoftcap,
-    });
-    energy.next(
-      (curr) =>
-        curr +
-        Math.floor(
-          energyBaseGain + energyGainPerLevel * (beforeGain + afterGain.energy)
-        ) -
-        energyCost
-    );
-    mass.next(
-      (curr) =>
-        curr +
-        massBaseGain +
-        massGainPerLevel * (beforeGain + afterGain.mass) -
-        massCost
-    );
-    rodent.next((curr) => curr + 1);
+    const { energy: energyGain, mass: massGain } = getInfo.rodentGain;
+    energy.add({ gain: energyGain, loss: energyCost });
+    mass.add({ gain: massGain, loss: massCost });
+    rodent.add({ gain: 1 });
   }
   return {
     energyCost,
@@ -254,7 +209,7 @@ class Information {
   resources = { energy: 0, mass: 0 };
   /**
    * An object of skill getters
-   * @type {{air: {current: number}; flora: {current: number}; rodent: {current: number};}}
+   * @type {{air: number; flora: number; rodent: number;}}
    */
   skills = { air: 0, flora: 0, rodent: 0 };
   /**
@@ -303,36 +258,39 @@ class Information {
     if (this.evolutions.items.includes("exist-1")) {
       const { air, flora, rodent } = this.skills;
       energyGain *=
-        Math.min(this.airSoftCap, air) * 0.005 +
+        Math.min(this.airSoftCap, air) * 0.01 +
         this.airCap({
-          energy: Math.max(this.airSoftCap - air, 0) * 0.005,
-        }).energy;
+          energy: Math.max(this.airSoftCap - air, 0),
+        }).energy *
+          0.01;
       energyGain *=
-        Math.min(this.floraSoftCap, flora) +
+        Math.min(this.floraSoftCap, flora) * 0.75 +
         this.floraCap({
           energy: Math.max(this.floraSoftCap - flora, 0),
-        }).energy;
+        }).energy *
+          0.75;
       energyGain *=
-        Math.min(this.rodentSoftCap, rodent) * 10 +
+        Math.min(this.rodentSoftCap, rodent) * 5 +
         this.rodentCap({
-          energy: Math.max(this.rodentSoftCap - rodent, 0) * 10,
-        }).energy;
+          energy: Math.max(this.rodentSoftCap - rodent, 0),
+        }).energy *
+          5;
     }
     return Math.floor(energyGain);
   }
 
   get airCost() {
-    let energyCost = airBaseInfo.energyCost;
+    let energy = airBaseInfo.energyCost;
     if (this.evolutions.items.includes("lungs-1")) {
-      energyCost -= 2;
+      energy -= 2;
     }
     if (this.evolutions.items.includes("lungs-2")) {
-      energyCost -= 3;
+      energy -= 3;
     }
     if (this.evolutions.items.includes("lungs-3")) {
-      energyCost -= 3;
+      energy -= 3;
     }
-    return { energyCost };
+    return { energy };
   }
 
   get airMulti() {
@@ -370,18 +328,48 @@ class Information {
     return { energy: Math.floor(energy ** 0.5 / 2) };
   }
 
+  get airTime() {
+    return airBaseInfo.timePerProgress;
+  }
+
+  get airGain() {
+    const { air } = this.skills;
+    const multi = this.airMulti;
+    const softcap = this.airSoftCap;
+    const { energy } = this.airCap({
+      energy: multi * Math.max(air - softcap, 0),
+    });
+    return {
+      energy: Math.floor(
+        airBaseInfo.energyBaseGain +
+          airBaseInfo.energyGainPerLevel *
+            (multi * Math.min(softcap - 1, air - 1) + energy)
+      ),
+    };
+  }
+
+  get airInfo() {
+    return {
+      cost: this.airCost,
+      multi: this.airMulti,
+      softcap: this.airSoftCap,
+      gain: this.airGain,
+      time: this.airTime,
+    };
+  }
+
   get floraCost() {
-    let energyCost = floraBaseInfo.energyCost;
+    let energy = floraBaseInfo.energyCost;
     if (this.evolutions.items.includes("nose-1")) {
-      energyCost -= 150;
+      energy -= 150;
     }
     if (this.evolutions.items.includes("nose-2")) {
-      energyCost -= 200;
+      energy -= 200;
     }
     if (this.evolutions.items.includes("nose-3")) {
-      energyCost -= 250;
+      energy -= 250;
     }
-    return { energyCost };
+    return { energy };
   }
 
   get floraMulti() {
@@ -407,10 +395,40 @@ class Information {
     return { energy: Math.floor(energy ** 0.5 / 2) };
   }
 
+  get floraTime() {
+    return floraBaseInfo.timePerProgress;
+  }
+
+  get floraGain() {
+    const { flora } = this.skills;
+    const multi = this.floraMulti;
+    const softcap = this.floraSoftCap;
+    const { energy } = this.floraCap({
+      energy: multi * Math.max(flora - softcap, 0),
+    });
+    return {
+      energy: Math.floor(
+        floraBaseInfo.energyBaseGain +
+          floraBaseInfo.energyGainPerLevel *
+            (multi * Math.min(softcap - 1, flora - 1) + energy)
+      ),
+    };
+  }
+
+  get floraInfo() {
+    return {
+      cost: this.floraCost,
+      multi: this.floraMulti,
+      softcap: this.floraSoftCap,
+      gain: this.floraGain,
+      time: this.floraTime,
+    };
+  }
+
   get rodentCost() {
-    let energyCost = rodentBaseInfo.energyCost;
-    let massCost = rodentBaseInfo.massCost;
-    return { energyCost, massCost };
+    let energy = rodentBaseInfo.energyCost;
+    let mass = rodentBaseInfo.massCost;
+    return { energy, mass };
   }
 
   get rodentMulti() {
@@ -427,6 +445,44 @@ class Information {
     return {
       energy: Math.floor(energy ** 0.5 / 2),
       mass: Math.floor(mass ** 0.5 / 2),
+    };
+  }
+
+  get rodentTime() {
+    return rodentBaseInfo.timePerProgress;
+  }
+
+  get rodentGain() {
+    const { rodent } = this.skills;
+    const multi = this.rodentMulti;
+    const softcap = this.rodentSoftCap;
+    const { energy, mass } = this.rodentCap({
+      energy: Math.max(rodent - softcap, 0),
+      mass: Math.max(rodent - softcap, 0),
+    });
+    return {
+      energy: Math.floor(
+        rodentBaseInfo.energyBaseGain +
+          rodentBaseInfo.energyGainPerLevel *
+            (multi * Math.min(softcap - 1, rodent - 1) + energy)
+      ),
+      mass:
+        Math.floor(
+          (rodentBaseInfo.massBaseGain +
+            rodentBaseInfo.massGainPerLevel *
+              (multi * (Math.min(softcap - 1, rodent - 1) + mass))) *
+            100
+        ) / 100,
+    };
+  }
+
+  get rodentInfo() {
+    return {
+      cost: this.rodentCost,
+      multi: this.rodentMulti,
+      softcap: this.rodentSoftCap,
+      gain: this.rodentGain,
+      time: this.rodentTime,
     };
   }
 }
@@ -462,7 +518,7 @@ function secondsAsReadable(time, round = "s") {
       break;
   }
   let result = "";
-  if (days > 0) result += `${days}d `;
+  if (days > 0) result += `${numberAsReadable(days)}d `;
   if (hours > 0) result += `${hours}h `;
   if (minutes > 0) result += `${minutes}m `;
   if (seconds > 0) result += `${seconds}s `;
@@ -474,7 +530,9 @@ function numberAsReadable(num) {
     console.error("Util.js > numberAsReadable: Only accept Number() types");
     return num;
   }
-  const [beforeDecimal, afterDecimal] = num.toString().split(".");
+  const [beforeDecimal, afterDecimal] = (Math.round(num * 100) / 100)
+    .toString()
+    .split(".");
   return (
     beforeDecimal.replace(/\B(?=(\d{3})+(?!\d))/g, ",") +
     (afterDecimal ? `.${afterDecimal}` : "")

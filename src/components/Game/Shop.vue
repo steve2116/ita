@@ -19,7 +19,7 @@
           v-on:mouseenter="changeShowHover(name, 'button')"
           v-on:mouseleave="changeShowHover(name, 'button', false, false)"
           v-on:focus="changeShowHover(name, 'button', true)"
-          v-on:blur="unShowHover(name)"
+          v-on:blur="unShowHover(name, false)"
           :disabled="ownedItems.includes(name)"
         >
           {{ item.name }}
@@ -28,7 +28,7 @@
           v-show="Object.values(showHover[name]).some((x) => x)"
           :class="hoverStyle"
           @click="() => unShowHover(name)"
-          @touchend="() => unShowHover(name)"
+          @touchend="() => unShowHover(name, false)"
           v-on:mouseenter="changeShowHover(name, 'hover')"
           v-on:mouseleave="changeShowHover(name, 'hover', false, false)"
         >
@@ -76,6 +76,10 @@ export default {
       required: true,
     },
     skills: {
+      type: Object,
+      required: true,
+    },
+    mobileRef: {
       type: Object,
       required: true,
     },
@@ -130,7 +134,7 @@ export default {
         "lungs-5": {
           name: "Breathing mastery",
           view: { air: 130, flora: 3 },
-          unlock: { air: 300, flora: 10 },
+          unlock: { air: 300, flora: 5 },
           price: { energy: 50000 },
           description:
             "Breathing has become natural to you, you don't even have to think about it.",
@@ -180,7 +184,6 @@ export default {
         (acc, key) => ({ ...acc, [key]: { button: false, hover: false } }),
         {}
       ),
-      touch: false,
     };
   },
   computed: {
@@ -201,6 +204,8 @@ export default {
     hoverStyle() {
       return {
         "hover-box": true,
+        "light-border-1": this.theme === "light",
+        "dark-border-1": this.theme === "dark",
         "light-shop-hover": this.theme === "light",
         "dark-shop-hover": this.theme === "dark",
       };
@@ -209,16 +214,22 @@ export default {
   methods: {
     numberAsReadable,
     changeShowHover(name, type, touch = true, value = true) {
-      if (!touch || !this.touch) this.showHover[name][type] = value;
+      if (!touch || !this.mobileRef.isMobile)
+        this.showHover[name][type] = value;
     },
-    unShowHover(name) {
-      const { showHover } = this;
-      Object.keys(showHover[name]).forEach(
-        (key) => (showHover[name][key] = false)
-      );
+    unShowHover(name, touch = true) {
+      if (!touch || !this.mobileRef.isMobile) {
+        const { showHover } = this;
+        Object.keys(showHover[name]).forEach(
+          (key) => (showHover[name][key] = false)
+        );
+      }
     },
     buttonClick(name, item) {
-      if (!this.touch && Object.values(this.showHover[name]).some((x) => x))
+      if (
+        !this.mobileRef.isMobile &&
+        Object.values(this.showHover[name]).some((x) => x)
+      )
         this.$emit("purchase", {
           name,
           price: item.price,
@@ -226,7 +237,7 @@ export default {
         });
     },
     buttonTouch(name, item) {
-      this.touch = true;
+      this.mobileRef.mobile();
       if (this.showHover[name].button) {
         this.$emit("purchase", {
           name,
@@ -265,7 +276,7 @@ button {
   margin-top: calc(var(--un) * -2);
   margin-left: calc(var(--un) * 10);
   padding: calc(var(--un) * 1.5);
-  border: calc(var(--border-width) * 0.7) solid black;
+  border-width: calc(var(--border-width) * 0.7);
   border-radius: calc(var(--un) * 5);
 }
 </style>

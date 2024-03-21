@@ -12,6 +12,12 @@
       </button>
       <button
         :class="navButtonStyle"
+        @click="tab = 'stats'"
+      >
+        Stats
+      </button>
+      <button
+        :class="navButtonStyle"
         @click="tab = 'settings'"
       >
         Settings
@@ -31,6 +37,16 @@
         :tick-rate="currentTickRate"
         :game-data="gameData"
         :get-info="getInfo"
+        :game-stats="gameStats"
+        :general-data="generalData"
+      />
+
+      <Statst
+        v-else-if="tab === 'stats'"
+        :theme="theme"
+        :get-info="getInfo"
+        :game-data="gameData"
+        :game-stats="gameStats"
       />
       <Settingst
         v-else-if="tab === 'settings'"
@@ -41,12 +57,14 @@
         @manual-save="saveGame"
         @change-theme="() => $emit('changeTheme')"
         @change-tick-speed="changeTickSpeed"
-        @change-version="changeVersionEmit"
       />
       <template v-else-if="tab === 'credits-info'"
         ><p>Me ( github.com/steve2116 )</p></template
       >
-      <template v-else>How... nevermind, please report a bug</template>
+      <template v-else
+        >How... nevermind, please report a bug. Somehow you made it onto tab [
+        {{ tab }} ]</template
+      >
     </main>
   </div>
 </template>
@@ -54,6 +72,7 @@
 <script>
 import Gamet from "./Game/tGame.vue";
 import Settingst from "./Game/tSettings.vue";
+import Statst from "./Game/tStats.vue";
 
 import CryptoJS from "crypto-js";
 import { Information, airTick, floraTick, rodentTick } from "../utils";
@@ -63,6 +82,7 @@ export default {
   components: {
     Settingst,
     Gamet,
+    Statst,
   },
   props: {
     theme: {
@@ -95,6 +115,7 @@ export default {
         },
       },
       gameData: {},
+      gameStats: {},
       /** @type {Information} */
       getInfo: null,
     };
@@ -103,13 +124,15 @@ export default {
     const onLoadTimer = setInterval(() => {
       if (typeof this.initialGameData.generalData.new === "boolean") {
         clearInterval(onLoadTimer);
-        const { generalData, tick, gameData } = this.initialGameData;
+        const { generalData, tick, gameData, gameStats } = this.initialGameData;
         const { skillTicks, ...otherGameData } = gameData;
         this.generalData = { ...generalData, ...this.generalData };
         this.tick = { ...tick, ...this.tick };
         this.gameData = { ...otherGameData };
+        this.gameStats = { ...gameStats };
         this.timers.tick = setInterval(() => {
           this.tick.onTick();
+          this.gameStats.time.online += this.tick.tickRate / 1000;
         }, this.tick.tickRate);
         this.timers.save = setInterval(() => {
           this.generalData.secondsUntilSave -= 1;
@@ -167,92 +190,69 @@ export default {
       const encrypt = (text) => {
         return CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(text));
       };
-      switch (this.generalData.version) {
-        case "0.0.4": {
-          let skillTicks = {};
-          ["air", "flora", "rodent"].forEach((skill) => {
-            try {
-              skillTicks[skill] = this.tick.onTickFuncs[skill].progress;
-            } catch (e) {
-              skillTicks[skill] = 0;
-            }
-          });
-          return encrypt(
-            JSON.stringify({
-              version: "0.0.4",
-              theme: this.theme,
-              tick: { tickRate: this.tick.tickRate },
-              gameData: {
-                resources: {
-                  energy: this.gameData.resources.energy,
-                  mass: this.gameData.resources.mass,
-                },
-                skills: {
-                  air: this.gameData.skills.air,
-                  flora: this.gameData.skills.flora,
-                  rodent: this.gameData.skills.rodent,
-                },
-                skillTicks,
-                evolutions: { items: this.gameData.evolutions.items },
-              },
-            })
-          );
+      const skillTicks = {};
+      ["air", "flora", "rodent"].forEach((skill) => {
+        try {
+          skillTicks[skill] = this.tick.onTickFuncs[skill].progress;
+        } catch (e) {
+          skillTicks[skill] = 0;
         }
-        case "0.0.3": {
-          let skillTicks = {};
-          ["air", "flora", "rodent"].forEach((skill) => {
-            try {
-              skillTicks[skill] = this.tick.onTickFuncs[skill].progress;
-            } catch (e) {
-              skillTicks[skill] = 0;
-            }
-          });
-          return encrypt(
-            JSON.stringify({
-              version: "0.0.3",
-              theme: this.theme,
-              tick: { tickRate: this.tick.tickRate },
-              gameData: {
-                resources: {
-                  energy: this.gameData.resources.energy,
-                  mass: this.gameData.resources.mass,
+      });
+      return encrypt(
+        JSON.stringify({
+          version: "0.0.5",
+          theme: this.theme,
+          tick: { tickRate: this.tick.tickRate },
+          gameData: {
+            resources: {
+              energy: this.gameData.resources.energy,
+              mass: this.gameData.resources.mass,
+            },
+            skills: {
+              air: this.gameData.skills.air,
+              flora: this.gameData.skills.flora,
+              rodent: this.gameData.skills.rodent,
+            },
+            skillTicks,
+            evolutions: { items: this.gameData.evolutions.items },
+          },
+          gameStats: {
+            clicks: this.gameStats.clicks,
+            resources: {
+              energy: {
+                gained: {
+                  air: this.gameStats.resources.energy.gained.air,
+                  flora: this.gameStats.resources.energy.gained.flora,
+                  rodent: this.gameStats.resources.energy.gained.rodent,
+                  clicks: this.gameStats.resources.energy.gained.clicks,
                 },
-                skills: {
-                  air: this.gameData.skills.air,
-                  flora: this.gameData.skills.flora,
-                  rodent: this.gameData.skills.rodent,
-                },
-                skillTicks,
-              },
-            })
-          );
-        }
-        case "0.0.2": {
-          return encrypt(
-            JSON.stringify({
-              version: "0.0.2",
-              theme: this.theme,
-              tick: { tickRate: this.tick.tickRate },
-              gameData: {
-                resources: {
-                  energy: this.gameData.resources.energy,
-                  mass: this.gameData.resources.mass,
-                },
-                skills: {
-                  air: this.gameData.skills.air,
-                  flora: this.gameData.skills.flora,
-                  rodent: this.gameData.skills.rodent,
+                lost: {
+                  air: this.gameStats.resources.energy.lost.air,
+                  flora: this.gameStats.resources.energy.lost.flora,
+                  rodent: this.gameStats.resources.energy.lost.rodent,
                 },
               },
-            })
-          );
-        }
-        case "0.0.1": {
-          return encrypt(
-            JSON.stringify({ version: "0.0.1", theme: this.theme })
-          );
-        }
-      }
+              mass: {
+                gained: {
+                  air: this.gameStats.resources.mass.gained.air,
+                  flora: this.gameStats.resources.mass.gained.flora,
+                  rodent: this.gameStats.resources.mass.gained.rodent,
+                  clicks: this.gameStats.resources.mass.gained.clicks,
+                },
+                lost: {
+                  air: this.gameStats.resources.mass.lost.air,
+                  flora: this.gameStats.resources.mass.lost.flora,
+                  rodent: this.gameStats.resources.mass.lost.rodent,
+                },
+              },
+            },
+            time: {
+              online: this.gameStats.time.online,
+              playedSince: this.gameStats.time.playedSince,
+            },
+          },
+        })
+      );
     },
     saveGame() {
       this.generalData.secondsUntilSave =
@@ -263,7 +263,7 @@ export default {
       if (!this.tick.onTickFuncs.newTickRate) {
         const newTickRate = parseInt(newTickSpeed, 10);
         if (!isNaN(newTickRate)) {
-          const { tick, timers } = this;
+          const { tick, timers, gameStats } = this;
           tick.onTickFuncs.newTickRate = {
             func(tickRate, deleteFunc) {
               deleteFunc();
@@ -271,6 +271,7 @@ export default {
               clearInterval(timers.tick);
               timers.tick = setInterval(() => {
                 tick.onTick();
+                gameStats.time.online += tick.tickRate / 1000;
               }, tick.tickRate);
             },
             progress: 0,
@@ -282,6 +283,7 @@ export default {
       const { skills, resources } = this.gameData;
       const { onTickFuncs } = this.tick;
       const { getInfo } = this;
+      const stats = this.gameStats.resources;
       onTickFuncs.unlockAir = {
         func(tickRate, deleteFunc) {
           if (skills.air >= 0 || resources.energy >= 10) {
@@ -300,18 +302,25 @@ export default {
                           get current() {
                             return resources.energy;
                           },
-                          next(val) {
-                            if (typeof val === "number") resources.energy = val;
-                            else resources.energy = val(resources.energy);
+                          set current(val) {
+                            resources.energy = val;
+                          },
+                          add(vals) {
+                            resources.energy +=
+                              (vals.gain || 0) - (vals.loss || 0);
+                            stats.energy.gained.air += vals.gain || 0;
+                            stats.energy.lost.air += vals.loss || 0;
                           },
                         },
                         air: {
                           get current() {
                             return skills.air;
                           },
-                          next(val) {
-                            if (typeof val === "number") skills.air = val;
-                            else skills.air = val(skills.air);
+                          set current(val) {
+                            skills.air = val;
+                          },
+                          add(vals) {
+                            skills.air += (vals.gain || 0) - (vals.loss || 0);
                           },
                         },
                       });
@@ -345,18 +354,25 @@ export default {
                           get current() {
                             return resources.energy;
                           },
-                          next(val) {
-                            if (typeof val === "number") resources.energy = val;
-                            else resources.energy = val(resources.energy);
+                          set current(val) {
+                            resources.energy = val;
+                          },
+                          add(vals) {
+                            resources.energy +=
+                              (vals.gain || 0) - (vals.loss || 0);
+                            stats.energy.gained.flora += vals.gain || 0;
+                            stats.energy.lost.flora += vals.loss || 0;
                           },
                         },
                         flora: {
                           get current() {
                             return skills.flora;
                           },
-                          next(val) {
-                            if (typeof val === "number") skills.flora = val;
-                            else skills.flora = val(skills.flora);
+                          set current(val) {
+                            skills.flora = val;
+                          },
+                          add(vals) {
+                            skills.flora += (vals.gain || 0) - (vals.loss || 0);
                           },
                         },
                       });
@@ -398,27 +414,40 @@ export default {
                           get current() {
                             return resources.energy;
                           },
-                          next(val) {
-                            if (typeof val === "number") resources.energy = val;
-                            else resources.energy = val(resources.energy);
+                          set current(val) {
+                            resources.energy = val;
+                          },
+                          add(vals) {
+                            resources.energy +=
+                              (vals.gain || 0) - (vals.loss || 0);
+                            stats.energy.gained.rodent += vals.gain || 0;
+                            stats.energy.lost.rodent += vals.loss || 0;
                           },
                         },
                         mass: {
                           get current() {
                             return resources.mass;
                           },
-                          next(val) {
-                            if (typeof val === "number") resources.mass = val;
-                            else resources.mass = val(resources.mass);
+                          set current(val) {
+                            resources.mass = val;
+                          },
+                          add(vals) {
+                            resources.mass +=
+                              (vals.gain || 0) - (vals.loss || 0);
+                            stats.mass.gained.rodent += vals.gain || 0;
+                            stats.mass.lost.rodent += vals.loss || 0;
                           },
                         },
                         rodent: {
                           get current() {
                             return skills.rodent;
                           },
-                          next(val) {
-                            if (typeof val === "number") skills.rodent = val;
-                            else skills.rodent = val(skills.rodent);
+                          set current(val) {
+                            skills.rodent = val;
+                          },
+                          add(vals) {
+                            skills.rodent +=
+                              (vals.gain || 0) - (vals.loss || 0);
                           },
                         },
                       });
@@ -434,11 +463,6 @@ export default {
         },
         progress: 0,
       };
-    },
-    changeVersionEmit(newVersion) {
-      this.generalData.version = newVersion;
-      this.saveGame();
-      window.location.reload();
     },
   },
   emits: ["changeTheme"],
