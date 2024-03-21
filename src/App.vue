@@ -21,8 +21,37 @@ import Game from "./components/Game.vue";
 
 import CryptoJS from "crypto-js";
 
-const currentVersion = "0.0.4";
+const currentVersion = "0.0.5";
 export const versions = {
+  "0.0.5": {
+    version: "0.0.5",
+    theme: "light",
+    lastReset: new Date(Date.now()).toISOString(),
+    tick: { tickRate: 250 },
+    gameData: {
+      resources: { energy: 0, mass: -1 },
+      skills: { air: -1, flora: -1, rodent: -1 },
+      skillTicks: { air: 0, flora: 0, rodent: 0 },
+      evolutions: { items: [] },
+    },
+    gameStats: {
+      clicks: 0,
+      resources: {
+        energy: {
+          gained: { air: 0, flora: 0, rodent: 0, clicks: 0 },
+          lost: { air: 0, flora: 0, rodent: 0 },
+        },
+        mass: {
+          gained: { air: 0, flora: 0, rodent: 0, clicks: 0 },
+          lost: { air: 0, flora: 0, rodent: 0 },
+        },
+      },
+      time: {
+        online: 0,
+        playedSince: new Date(Date.now()).toISOString(),
+      },
+    },
+  },
   "0.0.4": {
     version: "0.0.4",
     theme: "light",
@@ -31,9 +60,7 @@ export const versions = {
       resources: { energy: 0, mass: -1 },
       skills: { air: -1, flora: -1, rodent: -1 },
       skillTicks: { air: 0, flora: 0, rodent: 0 },
-      evolutions: {
-        items: [],
-      },
+      evolutions: { items: [] },
     },
   },
   "0.0.3": {
@@ -87,6 +114,33 @@ export function updateSaveVersion(gameData, to) {
     case to: {
       return gameData;
     }
+    case "0.0.4": {
+      return updateSaveVersion(
+        {
+          ...gameData,
+          version: "0.0.5",
+          lastReset: "2024-03-21T00:00:00.000Z",
+          gameStats: {
+            clicks: 0,
+            resources: {
+              energy: {
+                gained: { air: 0, flora: 0, rodent: 0, clicks: 0 },
+                lost: { air: 0, flora: 0, rodent: 0 },
+              },
+              mass: {
+                gained: { air: 0, flora: 0, rodent: 0, clicks: 0 },
+                lost: { air: 0, flora: 0, rodent: 0 },
+              },
+            },
+            time: {
+              online: 0,
+              playedSince: new Date(Date.now()).toISOString(),
+            },
+          },
+        },
+        to
+      );
+    }
     case "0.0.3": {
       return updateSaveVersion(
         {
@@ -128,6 +182,12 @@ export function downdateSaveVersion(gameData, to) {
   switch (gameData.version) {
     case to: {
       return gameData;
+    }
+    case "0.0.5": {
+      const tempGameData = { ...gameData, version: "0.0.4" };
+      delete tempGameData.lastReset;
+      delete tempGameData.gameStats;
+      return downdateSaveVersion(tempGameData, to);
     }
     case "0.0.4": {
       const tempGameData = { ...gameData, version: "0.0.3" };
@@ -219,22 +279,30 @@ export default {
       data = versions[currentVersion];
       newData = true;
     } else data = normaliseVersion(data, currentVersion);
-    console.log(
-      `loaded game data with version ${oldVersion || "[data not found]"}`
-    );
-    if (!newData && isVersion(oldVersion, currentVersion) === 1)
+    let updated = false;
+    if (!newData && isVersion(oldVersion, currentVersion) === 1) {
+      // updated = true;
       console.log(
-        `A more recent version is available! Please update your file in settings.`
+        `A more recent version was available! Your game has been updated!\nv${oldVersion} -> v${currentVersion}`
       );
+    }
+    console.log(
+      `loaded game data with version ${
+        updated ? currentVersion : oldVersion || "[data not found]"
+      }`
+    );
     // load game data
     this.theme = data.theme;
     this.initialGameData = {
       generalData: {
-        version: oldVersion || currentVersion,
+        version: updated ? currentVersion : oldVersion || currentVersion,
         new: newData,
+        mobile: false,
       },
       tick: data.tick,
       gameData: data.gameData,
+      gameStats:
+        data.gameStats || updateSaveVersion(data, currentVersion).gameStats,
     };
   },
   methods: {

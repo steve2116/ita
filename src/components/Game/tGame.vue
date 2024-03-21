@@ -18,6 +18,7 @@
         :theme="theme"
         :owned-items="gameData.evolutions.items"
         :skills="gameData.skills"
+        :mobile-ref="mobileRef"
         @purchase="shopPurchase"
       />
     </template>
@@ -139,6 +140,14 @@ export default {
       type: Information,
       required: true,
     },
+    gameStats: {
+      type: Object,
+      required: true,
+    },
+    generalData: {
+      type: Object,
+      required: true,
+    },
   },
   data() {
     return {
@@ -158,7 +167,7 @@ export default {
     },
     energy() {
       try {
-        return numberAsReadable(this.gameData.resources.energy);
+        return numberAsReadable(Math.round(this.gameData.resources.energy));
       } catch (e) {
         return 0;
       }
@@ -172,7 +181,9 @@ export default {
     },
     mass() {
       try {
-        return numberAsReadable(this.gameData.resources.mass);
+        return numberAsReadable(
+          Number(Math.floor(this.gameData.resources.mass * 100) / 100)
+        );
       } catch (e) {
         return 0;
       }
@@ -296,11 +307,25 @@ export default {
         invisible: this.gameData.skills.air < 15,
       });
     },
+    mobileRef() {
+      const gen = this.generalData;
+      return {
+        get isMobile() {
+          return gen.mobile;
+        },
+        mobile() {
+          gen.mobile = true;
+        },
+      };
+    },
   },
   methods: {
     clickEnergy() {
       try {
-        this.gameData.resources.energy += this.getInfo.energyClick;
+        const gain = this.getInfo.energyClick;
+        this.gameStats.clicks++;
+        this.gameData.resources.energy += gain;
+        this.gameStats.resources.energy.gained.clicks += gain;
       } catch (e) {
         console.error(e);
       }
@@ -322,6 +347,7 @@ export default {
     clickAir() {
       const { skills, resources } = this.gameData;
       const { getInfo } = this;
+      const stats = this.gameStats.resources;
       skills.air = 1;
       this.onTickRef.air = {
         func(tickRate) {
@@ -334,18 +360,24 @@ export default {
                   get current() {
                     return resources.energy;
                   },
-                  next(val) {
-                    if (typeof val === "number") resources.energy = val;
-                    else resources.energy = val(resources.energy);
+                  set current(val) {
+                    resources.energy = val;
+                  },
+                  add(vals) {
+                    resources.energy += (vals.gain || 0) - (vals.loss || 0);
+                    stats.energy.gained.air += vals.gain || 0;
+                    stats.energy.lost.air += vals.loss || 0;
                   },
                 },
                 air: {
                   get current() {
                     return skills.air;
                   },
-                  next(val) {
-                    if (typeof val === "number") skills.air = val;
-                    else skills.air = val(skills.air);
+                  set current(val) {
+                    skills.air = val;
+                  },
+                  add(vals) {
+                    skills.air += (vals.gain || 0) - (vals.loss || 0);
                   },
                 },
               });
@@ -359,6 +391,7 @@ export default {
     clickFlora() {
       const { skills, resources } = this.gameData;
       const { getInfo } = this;
+      const stats = this.gameStats.resources;
       skills.flora = 1;
       this.onTickRef.flora = {
         func(tickRate) {
@@ -371,18 +404,24 @@ export default {
                   get current() {
                     return resources.energy;
                   },
-                  next(val) {
-                    if (typeof val === "number") resources.energy = val;
-                    else resources.energy = val(resources.energy);
+                  set current(val) {
+                    resources.energy = val;
+                  },
+                  add(vals) {
+                    resources.energy += (vals.gain || 0) - (vals.loss || 0);
+                    stats.energy.gained.flora += vals.gain || 0;
+                    stats.energy.lost.flora += vals.loss || 0;
                   },
                 },
                 flora: {
                   get current() {
                     return skills.flora;
                   },
-                  next(val) {
-                    if (typeof val === "number") skills.flora = val;
-                    else skills.flora = val(skills.flora);
+                  set current(val) {
+                    skills.flora = val;
+                  },
+                  add(vals) {
+                    skills.flora += (vals.gain || 0) - (vals.loss || 0);
                   },
                 },
               });
@@ -396,6 +435,7 @@ export default {
     clickRodent() {
       const { skills, resources } = this.gameData;
       const { getInfo } = this;
+      const stats = this.gameStats.resources;
       skills.rodent = 1;
       resources.mass = 0;
       this.onTickRef.rodent = {
@@ -410,27 +450,37 @@ export default {
                   get current() {
                     return resources.energy;
                   },
-                  next(val) {
-                    if (typeof val === "number") resources.energy = val;
-                    else resources.energy = val(resources.energy);
+                  set current(val) {
+                    resources.energy = val;
+                  },
+                  add(vals) {
+                    resources.energy += (vals.gain || 0) - (vals.loss || 0);
+                    stats.energy.gained.rodent += vals.gain || 0;
+                    stats.energy.lost.rodent += vals.loss || 0;
                   },
                 },
                 mass: {
                   get current() {
                     return resources.mass;
                   },
-                  next(val) {
-                    if (typeof val === "number") resources.mass = val;
-                    else resources.mass = val(resources.mass);
+                  set current(val) {
+                    resources.mass = val;
+                  },
+                  add(vals) {
+                    resources.mass += (vals.gain || 0) - (vals.loss || 0);
+                    stats.mass.gained.rodent += vals.gain || 0;
+                    stats.mass.lost.rodent += vals.loss || 0;
                   },
                 },
                 rodent: {
                   get current() {
                     return skills.rodent;
                   },
-                  next(val) {
-                    if (typeof val === "number") skills.rodent = val;
-                    else skills.rodent = val(skills.rodent);
+                  set current(val) {
+                    skills.rodent = val;
+                  },
+                  add(vals) {
+                    skills.rodent += (vals.gain || 0) - (vals.loss || 0);
                   },
                 },
               });

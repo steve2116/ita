@@ -51,22 +51,6 @@ import { secondsAsReadable } from "../../utils.js";
       </button>
     </div>
     <div :class="settingStyle">
-      <p>Change version</p>
-      <select
-        name="version"
-        id="changeVersion"
-        v-model="selectVersion"
-      >
-        <option
-          v-for="version of Object.keys(versions)"
-          :key="version"
-          :value="version"
-        >
-          {{ version }}
-        </option>
-      </select>
-    </div>
-    <div :class="settingStyle">
       <p>Tick Air</p>
       <button
         :class="buttonStyle"
@@ -93,32 +77,12 @@ import { secondsAsReadable } from "../../utils.js";
         Click
       </button>
     </div>
-    <div
-      :class="settingStyle"
-      v-if="initialVersion !== selectVersion"
-    >
-      <p>
-        {{
-          versionIsLower
-            ? "Update game"
-            : "I do not know why I added this feature, all this does is make you lose data. Do at your own risk."
-        }}
-      </p>
-      <button
-        :class="buttonStyle"
-        @click="$emit('changeVersion', selectVersion)"
-      >
-        Confirm?
-      </button>
-    </div>
-    <template v-else />
   </section>
 </template>
 
 <script>
-import { themeRotation, versions } from "../../App.vue";
+import { themeRotation } from "../../App.vue";
 
-import { isVersion } from "../../App.vue";
 export default {
   name: "Settingst",
   props: {
@@ -151,7 +115,6 @@ export default {
     "manualSave",
     "changeTickSpeed",
     "cheatEnergy",
-    "changeVersion",
     "tickX",
   ],
   computed: {
@@ -180,9 +143,6 @@ export default {
     },
     readableSaveTime() {
       return secondsAsReadable(this.secondsUntilSave, "2");
-    },
-    versionIsLower() {
-      return isVersion(this.initialVersion, this.selectVersion) === 1;
     },
   },
   methods: {
