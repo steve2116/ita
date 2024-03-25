@@ -3,6 +3,7 @@
     id="holder"
     :class="holderStyle"
   >
+    <Notification :theme="theme" />
     <div
       id="game"
       :class="gameStyle"
@@ -18,6 +19,7 @@
 
 <script>
 import Game from "./components/Game.vue";
+import { Notification, showNotification } from "./elements";
 
 import CryptoJS from "crypto-js";
 
@@ -235,6 +237,7 @@ export default {
   name: "App",
   components: {
     Game,
+    Notification,
   },
   data() {
     return {
@@ -281,16 +284,17 @@ export default {
     } else data = normaliseVersion(data, currentVersion);
     let updated = false;
     if (!newData && isVersion(oldVersion, currentVersion) === 1) {
-      // updated = true;
-      console.log(
-        `A more recent version was available! Your game has been updated!\nv${oldVersion} -> v${currentVersion}`
+      updated = true;
+      showNotification(
+        `Local game data found with an outdated version. Your save file has been updated!\nv${oldVersion} -> v${currentVersion}`
       );
     }
-    console.log(
-      `loaded game data with version ${
-        updated ? currentVersion : oldVersion || "[data not found]"
-      }`
-    );
+    if (!updated && oldVersion)
+      showNotification(
+        `Local game data found. Loading version ${
+          updated ? currentVersion : oldVersion
+        }`
+      );
     // load game data
     this.theme = data.theme;
     this.initialGameData = {
@@ -301,8 +305,7 @@ export default {
       },
       tick: data.tick,
       gameData: data.gameData,
-      gameStats:
-        data.gameStats || updateSaveVersion(data, currentVersion).gameStats,
+      gameStats: data.gameStats,
     };
   },
   methods: {

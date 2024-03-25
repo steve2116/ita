@@ -103,7 +103,7 @@
 </template>
 
 <script>
-import ProgressBar from "../../elements/progress-bar.vue";
+import { ProgressBar, showNotification } from "../../elements/";
 import Shop from "./Shop.vue";
 import {
   Information,
@@ -161,6 +161,7 @@ export default {
   computed: {
     clickerButtonStyle() {
       return {
+        "no-select": true,
         "light-button-2": this.theme === "light",
         "dark-button-2": this.theme === "dark",
       };
@@ -510,9 +511,9 @@ export default {
       } catch (e) {
         try {
           const { name } = item;
-          console.error(`Error attempting purchase of ${name}`);
+          showNotification(`Error attempting purchase of ${name}`);
         } catch (e) {
-          console.error("Error attempting purchase");
+          showNotification("Error attempting purchase");
         }
       }
     },

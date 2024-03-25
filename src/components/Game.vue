@@ -47,6 +47,7 @@
         :get-info="getInfo"
         :game-data="gameData"
         :game-stats="gameStats"
+        :version="generalData.version"
       />
       <Settingst
         v-else-if="tab === 'settings'"
