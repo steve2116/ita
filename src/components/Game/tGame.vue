@@ -19,6 +19,7 @@
         :owned-items="gameData.evolutions.items"
         :skills="gameData.skills"
         :mobile-ref="mobileRef"
+        :beat="endRef"
         @purchase="shopPurchase"
       />
     </template>
@@ -316,6 +317,17 @@ export default {
         },
         mobile() {
           gen.mobile = true;
+        },
+      };
+    },
+    endRef() {
+      const thisRef = this;
+      return {
+        get val() {
+          return thisRef.generalData.beat;
+        },
+        set val(val) {
+          if (typeof val === "boolean") thisRef.generalData.beat = val;
         },
       };
     },

@@ -103,6 +103,7 @@ export default {
       generalData: {
         secondsUntilSave: 150,
         savingIntervalInSeconds: 300,
+        beat: false,
       },
       tick: {
         tickRateMin: 50,
