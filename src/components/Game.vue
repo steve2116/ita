@@ -47,6 +47,7 @@
         :get-info="getInfo"
         :game-data="gameData"
         :game-stats="gameStats"
+        :version="generalData.version"
       />
 
       <Settingst
@@ -58,14 +59,7 @@
         @manual-save="saveGame"
         @change-theme="() => $emit('changeTheme')"
         @change-tick-speed="changeTickSpeed"
-        @cheat-energy="
-          () => {
-            const { resources } = gameData;
-            resources.energy > 0
-              ? (resources.energy *= 2)
-              : (resources.energy = 20);
-          }
-        "
+        @cheat-energy="cheatEnergy"
         @tick-x="cheatTick"
       />
 
@@ -475,6 +469,14 @@ export default {
         },
         progress: 0,
       };
+    },
+    cheatEnergy() {
+      const { resources } = this.gameData;
+      const add =
+        resources.energy > 0 ? resources.energy : 20 - resources.energy;
+      resources.energy += add;
+      this.gameStats.resources.energy.gained.clicks += add;
+      this.gameStats.clicks++;
     },
     cheatTick(tick) {
       const { skills, resources } = this.gameData;

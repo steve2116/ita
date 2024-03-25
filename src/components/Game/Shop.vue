@@ -63,6 +63,7 @@
 </template>
 
 <script>
+import { showNotification } from "../../elements";
 import { numberAsReadable } from "../../utils";
 export default {
   name: "Shop",
@@ -248,6 +249,23 @@ export default {
     },
   },
   emits: ["purchase"],
+  mounted() {
+    const timer = setInterval(() => {
+      if (this.ownedItems.length === Object.keys(this.items).length) {
+        clearInterval(timer);
+        showNotification("You bought everything! Congratulations!");
+        showNotification(
+          "For now this is the end of the game, but feel free to keep playing!",
+          6000
+        );
+        showNotification(
+          "Please note that game data will be reset when the beta version of the game (v0.1.0) is released.",
+          10000
+        );
+        showNotification("Thanks for playing!");
+      }
+    }, 500);
+  },
 };
 </script>
 

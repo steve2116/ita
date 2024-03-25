@@ -3,6 +3,7 @@
   <section>
     <h3>Game stats</h3>
     <section class="one">
+      <p>Game version: v{{ version }}</p>
       <p>Time played: {{ secondsAsReadable(timePlayed) }}</p>
       <p>Played since: {{ playedSince }}</p>
     </section>
@@ -149,6 +150,10 @@ export default {
     },
     gameStats: {
       type: Object,
+      required: true,
+    },
+    version: {
+      type: String,
       required: true,
     },
   },
