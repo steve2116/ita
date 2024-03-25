@@ -338,7 +338,7 @@ export default {
           setTimeout(() => {
             this.preventHold.energy = false;
           }, 200);
-          this.gameData.resources.energy++;
+          this.clickEnergy();
         }
       } catch (e) {
         console.error(e);
