@@ -176,7 +176,7 @@ export default {
     },
     unlockMass() {
       try {
-        return this.gameData.resources.mass >= 0;
+        return this.gameData.skills.rodent > 0;
       } catch (e) {
         return false;
       }
@@ -345,7 +345,14 @@ export default {
     },
     holdEnergy() {
       try {
-        this.clickEnergy();
+        const { preventHold } = this;
+        if (!preventHold.energy) {
+          preventHold.energy = true;
+          this.clickEnergy();
+          setTimeout(() => {
+            preventHold.energy = false;
+          }, 100);
+        }
       } catch (e) {
         console.error(e);
       }
@@ -559,5 +566,6 @@ button {
   background-color: transparent;
   color: transparent;
   border: none;
+  pointer-events: none;
 }
 </style>

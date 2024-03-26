@@ -100,7 +100,7 @@ export default {
 
 <style scoped>
 #notification {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   height: 0;
@@ -109,6 +109,8 @@ export default {
   border: none;
   margin: 0;
   padding: 0;
+  pointer-events: none;
+  z-index: 999;
 }
 .container {
   position: relative;

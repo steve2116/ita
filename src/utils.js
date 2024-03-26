@@ -296,19 +296,29 @@ class Information {
   get airMulti() {
     let multi = 1;
     if (this.evolutions.items.includes("lungs-1")) {
-      multi += 0.5;
+      multi += 0.1;
     }
     if (this.evolutions.items.includes("lungs-2")) {
-      multi += 1;
+      multi += 0.3;
     }
     if (this.evolutions.items.includes("lungs-3")) {
-      multi += 1.5;
+      multi += 0.5;
     }
     if (this.evolutions.items.includes("lungs-4")) {
-      multi += 2;
+      multi += 0.75;
     }
     if (this.evolutions.items.includes("lungs-5")) {
+      multi += 1.25;
+    }
+    if (this.evolutions.items.includes("lungs-6")) {
+      multi += 2;
+    }
+    if (this.evolutions.items.includes("lungs-7")) {
       multi += 3;
+    }
+
+    if (this.evolutions.items.includes("mouth-1")) {
+      multi *= 1.1;
     }
     return multi;
   }
@@ -321,11 +331,30 @@ class Information {
     if (this.evolutions.items.includes("lungs-5")) {
       softcap *= 2;
     }
+    if (this.evolutions.items.includes("lungs-7")) {
+      softcap *= 2.5;
+    }
+    if (this.evolutions.items.includes("nose-4")) {
+      softcap *= 1.25;
+    }
+    if (this.evolutions.items.includes("nose-5")) {
+      softcap *= 1.3;
+    }
+    if (this.evolutions.items.includes("mouth-1")) {
+      softcap *= 1.5;
+    }
     return softcap;
   }
 
   airCap({ energy }) {
-    return { energy: Math.floor(energy ** 0.5 / 2) };
+    let exp = 0.5;
+    if (this.evolutions.items.includes("lungs-6")) {
+      exp += 0.02;
+    }
+    if (this.evolutions.items.includes("lungs-7")) {
+      exp += 0.03;
+    }
+    return { energy: Math.floor(energy ** exp / 2) };
   }
 
   get airTime() {
@@ -375,13 +404,23 @@ class Information {
   get floraMulti() {
     let multi = 1;
     if (this.evolutions.items.includes("nose-1")) {
-      multi += 0.5;
+      multi += 0.2;
     }
     if (this.evolutions.items.includes("nose-2")) {
-      multi += 1;
+      multi += 0.5;
     }
     if (this.evolutions.items.includes("nose-3")) {
+      multi += 0.9;
+    }
+    if (this.evolutions.items.includes("nose-4")) {
       multi += 1.5;
+    }
+    if (this.evolutions.items.includes("nose-5")) {
+      multi += 2.2;
+    }
+
+    if (this.evolutions.items.includes("mouth-1")) {
+      multi *= 1.1;
     }
     return multi;
   }
@@ -428,11 +467,23 @@ class Information {
   get rodentCost() {
     let energy = rodentBaseInfo.energyCost;
     let mass = rodentBaseInfo.massCost;
+    if (this.evolutions.items.includes("claws-1")) {
+      energy -= 50000;
+    }
+    if (this.evolutions.items.includes("claws-2")) {
+      energy -= 50000;
+    }
     return { energy, mass };
   }
 
   get rodentMulti() {
     let multi = 1;
+    if (this.evolutions.items.includes("claws-1")) {
+      multi += 0.1;
+    }
+    if (this.evolutions.items.includes("claws-2")) {
+      multi += 0.2;
+    }
     return multi;
   }
 

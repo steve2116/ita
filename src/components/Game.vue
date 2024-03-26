@@ -64,8 +64,17 @@
       />
 
       <template v-else-if="tab === 'credits-info'"
-        ><p>Me ( github.com/steve2116 )</p></template
-      >
+        ><p>The game takes 35 minutes to fully complete.</p>
+        <br />
+        <p>
+          Updates will not be frequent but will be coming. Any ideas are
+          welcome!
+        </p>
+        <br />
+        <p>My first attempt at making a game. I hope you enjoy it!</p>
+        <br />
+        <p>Me is: (Discord, Github as steve2116)</p>
+      </template>
       <template v-else
         >How... nevermind, please report a bug. Somehow you made it onto tab [
         {{ tab }} ]</template
@@ -474,90 +483,71 @@ export default {
     cheatEnergy() {
       const { resources } = this.gameData;
       const add =
-        resources.energy > 0 ? resources.energy : 20 - resources.energy;
+        resources.energy > 19 ? resources.energy : 20 - resources.energy;
       resources.energy += add;
       this.gameStats.resources.energy.gained.clicks += add;
       this.gameStats.clicks++;
     },
     cheatTick(tick) {
       const { skills, resources } = this.gameData;
+      const stats = this.gameStats.resources;
       switch (tick) {
         case "air": {
+          const flora = this.tick.onTickFuncs.flora;
+          const rodent = this.tick.onTickFuncs.rodent;
+          const tickRate = this.tick.tickRate;
+          if (flora) {
+            function flor() {
+              if (flora.progress < 120000) flora.progress += 2000;
+              else setTimeout(flor, tickRate);
+            }
+            flor();
+          }
+          if (rodent) {
+            function roden() {
+              if (rodent.progress < 600000) rodent.progress += 2000;
+              else setTimeout(roden, tickRate);
+            }
+            roden();
+          }
           airTick(this.getInfo).func({
             energy: {
               get current() {
                 return resources.energy;
               },
-              next(val) {
-                if (typeof val === "number") resources.energy = val;
-                else resources.energy = val(resources.energy);
+              set current(val) {
+                resources.energy = val;
+              },
+              add(vals) {
+                resources.energy += (vals.gain || 0) - (vals.loss || 0);
+                stats.energy.gained.air += vals.gain || 0;
+                stats.energy.lost.air += vals.loss || 0;
               },
             },
             air: {
               get current() {
                 return skills.air;
               },
-              next(val) {
-                if (typeof val === "number") skills.air = val;
-                else skills.air = val(skills.air);
+              set current(val) {
+                skills.air = val;
+              },
+              add(vals) {
+                skills.air += (vals.gain || 0) - (vals.loss || 0);
               },
             },
           });
           break;
         }
         case "flora": {
-          floraTick(this.getInfo).func({
-            energy: {
-              get current() {
-                return resources.energy;
-              },
-              next(val) {
-                if (typeof val === "number") resources.energy = val;
-                else resources.energy = val(resources.energy);
-              },
-            },
-            flora: {
-              get current() {
-                return skills.flora;
-              },
-              next(val) {
-                if (typeof val === "number") skills.flora = val;
-                else skills.flora = val(skills.flora);
-              },
-            },
-          });
+          for (let i = 0; i < 60; i++) {
+            this.cheatTick("air");
+          }
           break;
         }
         case "rodent": {
-          rodentTick(this.getInfo).func({
-            energy: {
-              get current() {
-                return resources.energy;
-              },
-              next(val) {
-                if (typeof val === "number") resources.energy = val;
-                else resources.energy = val(resources.energy);
-              },
-            },
-            mass: {
-              get current() {
-                return resources.mass;
-              },
-              next(val) {
-                if (typeof val === "number") resources.mass = val;
-                else resources.mass = val(resources.mass);
-              },
-            },
-            rodent: {
-              get current() {
-                return skills.rodent;
-              },
-              next(val) {
-                if (typeof val === "number") skills.rodent = val;
-                else skills.rodent = val(skills.rodent);
-              },
-            },
-          });
+          for (let i = 0; i < 5; i++) {
+            this.cheatTick("flora");
+          }
           break;
         }
         default: {
