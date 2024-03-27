@@ -23,10 +23,10 @@ import { Notification, showNotification } from "./elements";
 
 import CryptoJS from "crypto-js";
 
-export const currentVersion = "0.0.5";
+export const currentVersion = "0.1.0";
 export const versions = {
-  "0.0.5": {
-    version: "0.0.5",
+  "0.1.0": {
+    version: "0.1.0",
     theme: "light",
     lastReset: new Date(Date.now()).toISOString(),
     tick: { tickRate: 250 },
@@ -53,40 +53,6 @@ export const versions = {
         playedSince: new Date(Date.now()).toISOString(),
       },
     },
-  },
-  "0.0.4": {
-    version: "0.0.4",
-    theme: "light",
-    tick: { tickRate: 250 },
-    gameData: {
-      resources: { energy: 0, mass: -1 },
-      skills: { air: -1, flora: -1, rodent: -1 },
-      skillTicks: { air: 0, flora: 0, rodent: 0 },
-      evolutions: { items: [] },
-    },
-  },
-  "0.0.3": {
-    version: "0.0.3",
-    theme: "light",
-    tick: { tickRate: 250 },
-    gameData: {
-      resources: { energy: 0, mass: -1 },
-      skills: { air: -1, flora: -1, rodent: -1 },
-      skillTicks: { air: 0, flora: 0, rodent: 0 },
-    },
-  },
-  "0.0.2": {
-    version: "0.0.2",
-    theme: "light",
-    tick: { tickRate: 250 },
-    gameData: {
-      resources: { energy: 0, mass: -1 },
-      skills: { air: -1, flora: -1, rodent: -1 },
-    },
-  },
-  "0.0.1": {
-    version: "0.0.1",
-    theme: "light",
   },
 };
 export function normaliseVersion(
@@ -116,65 +82,6 @@ export function updateSaveVersion(gameData, to) {
     case to: {
       return gameData;
     }
-    case "0.0.4": {
-      return updateSaveVersion(
-        {
-          ...gameData,
-          version: "0.0.5",
-          lastReset: "2024-03-21T00:00:00.000Z",
-          gameStats: {
-            clicks: 0,
-            resources: {
-              energy: {
-                gained: { air: 0, flora: 0, rodent: 0, clicks: 0 },
-                lost: { air: 0, flora: 0, rodent: 0 },
-              },
-              mass: {
-                gained: { air: 0, flora: 0, rodent: 0, clicks: 0 },
-                lost: { air: 0, flora: 0, rodent: 0 },
-              },
-            },
-            time: {
-              online: 0,
-              playedSince: new Date(Date.now()).toISOString(),
-            },
-          },
-        },
-        to
-      );
-    }
-    case "0.0.3": {
-      return updateSaveVersion(
-        {
-          ...gameData,
-          version: "0.0.4",
-          gameData: { ...gameData.gameData, evolutions: { items: [] } },
-        },
-        to
-      );
-    }
-    case "0.0.2": {
-      return updateSaveVersion(
-        {
-          ...gameData,
-          version: "0.0.3",
-          gameData: {
-            ...gameData.gameData,
-            skillTicks: { air: 0, flora: 0, rodent: 0 },
-          },
-        },
-        to
-      );
-    }
-    case "0.0.1": {
-      return updateSaveVersion(
-        {
-          ...versions["0.0.2"],
-          theme: gameData.theme,
-        },
-        to
-      );
-    }
     default: {
       return versions[to];
     }
@@ -184,28 +91,6 @@ export function downdateSaveVersion(gameData, to) {
   switch (gameData.version) {
     case to: {
       return gameData;
-    }
-    case "0.0.5": {
-      const tempGameData = { ...gameData, version: "0.0.4" };
-      delete tempGameData.lastReset;
-      delete tempGameData.gameStats;
-      return downdateSaveVersion(tempGameData, to);
-    }
-    case "0.0.4": {
-      const tempGameData = { ...gameData, version: "0.0.3" };
-      delete tempGameData.gameData.evolutions;
-      return downdateSaveVersion(tempGameData, to);
-    }
-    case "0.0.3": {
-      const tempGameData = { ...gameData, version: "0.0.2" };
-      delete tempGameData.gameData.skillTicks;
-      return downdateSaveVersion(tempGameData, to);
-    }
-    case "0.0.2": {
-      return {
-        version: "0.0.1",
-        theme: gameData.theme,
-      };
     }
     default: {
       return versions[to];
@@ -278,30 +163,51 @@ export default {
     }
     let newData = false;
     const oldVersion = data ? data.version : undefined;
-    if (!oldVersion) {
-      data = versions[currentVersion];
-      newData = true;
-    } else data = normaliseVersion(data, currentVersion);
     let updated = false;
-    if (!newData && isVersion(oldVersion, currentVersion) === 1) {
+    if (
+      !data.lastReset ||
+      Date.parse(data.lastReset) < Date.parse("2024-03-27T14:00:00.000Z")
+    ) {
+      data = versions[currentVersion];
       updated = true;
       showNotification(
-        `Local game data found with an outdated version. Your save file has been updated!\nv${oldVersion} -> v${currentVersion}`
+        "The game has been updated with new balances. Unfortunately this means game data was reset.",
+        8000
       );
-    }
-    if (!updated && oldVersion)
       showNotification(
-        `Local game data found. Loading version ${
-          updated ? currentVersion : oldVersion
-        }`
+        "I hope this isn't too much of an inconvenience. It should only take 40m to get back to completing the game.",
+        9000
       );
+      showNotification(
+        "I hope you can enjoy the game again. Thank you for playing.",
+        8000
+      );
+    } else {
+      if (!oldVersion) {
+        data = versions[currentVersion];
+        newData = true;
+      } else data = normaliseVersion(data, currentVersion);
+      if (!newData && isVersion(oldVersion, currentVersion) === 1) {
+        updated = true;
+        showNotification(
+          `Local game data found with an outdated version. Your save file has been updated!\nv${oldVersion} -> v${currentVersion}`
+        );
+      }
+      if (!updated && oldVersion)
+        showNotification(
+          `Local game data found. Loading version ${
+            updated ? currentVersion : oldVersion
+          }`
+        );
+    }
     // load game data
     this.theme = data.theme;
     this.initialGameData = {
       generalData: {
-        version: updated ? currentVersion : oldVersion || currentVersion,
+        version: updated || !oldVersion ? currentVersion : oldVersion,
         new: newData,
         mobile: false,
+        lastReset: data.lastReset,
       },
       tick: data.tick,
       gameData: data.gameData,

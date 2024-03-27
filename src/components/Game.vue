@@ -24,9 +24,9 @@
       </button>
       <button
         :class="navButtonStyle"
-        @click="tab = 'credits-info'"
+        @click="tab = 'other'"
       >
-        Credits & Info
+        Other
       </button>
     </nav>
     <main>
@@ -63,18 +63,7 @@
         @tick-x="cheatTick"
       />
 
-      <template v-else-if="tab === 'credits-info'"
-        ><p>The game takes 35 minutes to fully complete.</p>
-        <br />
-        <p>
-          Updates will not be frequent but will be coming. Any ideas are
-          welcome!
-        </p>
-        <br />
-        <p>My first attempt at making a game. I hope you enjoy it!</p>
-        <br />
-        <p>Me is: (Discord, Github as steve2116)</p>
-      </template>
+      <template v-else-if="tab === 'other'"><Othert :theme="theme" /></template>
       <template v-else
         >How... nevermind, please report a bug. Somehow you made it onto tab [
         {{ tab }} ]</template
@@ -87,6 +76,7 @@
 import Gamet from "./Game/tGame.vue";
 import Settingst from "./Game/tSettings.vue";
 import Statst from "./Game/tStats.vue";
+import Othert from "./Game/tOther.vue";
 
 import CryptoJS from "crypto-js";
 import { Information, airTick, floraTick, rodentTick } from "../utils";
@@ -97,6 +87,7 @@ export default {
     Settingst,
     Gamet,
     Statst,
+    Othert,
   },
   props: {
     theme: {
@@ -117,6 +108,9 @@ export default {
         secondsUntilSave: 150,
         savingIntervalInSeconds: 300,
         beat: false,
+        state: {
+          gameShop: false,
+        },
       },
       tick: {
         tickRateMin: 50,
@@ -204,6 +198,7 @@ export default {
   methods: {
     getSaveData() {
       const encrypt = (text) => {
+        console.log(text);
         return CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(text));
       };
       const skillTicks = {};
@@ -216,8 +211,9 @@ export default {
       });
       return encrypt(
         JSON.stringify({
-          version: "0.0.5",
+          version: "0.1.0",
           theme: this.theme,
+          lastReset: this.generalData.lastReset,
           tick: { tickRate: this.tick.tickRate },
           gameData: {
             resources: {

@@ -5,11 +5,11 @@
       <p v-if="unlockMass">Mass: {{ mass }}</p>
       <template v-else />
     </div>
-    <template v-if="showShop">
+    <template v-if="generalData.state.gameShop">
       <div class="pressers">
         <button
           :class="clickerButtonStyle"
-          @click="() => (showShop = false)"
+          @click="() => (generalData.state.gameShop = false)"
         >
           Exit
         </button>
@@ -27,7 +27,7 @@
       <div class="pressers">
         <button
           :class="shopButtonStyle"
-          @click="() => (showShop = true)"
+          @click="() => (generalData.state.gameShop = true)"
           :disabled="hideShop"
         >
           Evolve Menu
@@ -35,6 +35,8 @@
         <button
           :class="clickerButtonStyle"
           @click="clickEnergy"
+          @touchstart="holdEnergyTouch"
+          @touchend="() => (holdingEnergy = false)"
           v-on:keydown.enter.prevent="holdEnergy"
         >
           Exist faster
@@ -155,8 +157,7 @@ export default {
       preventHold: {
         energy: false,
       },
-      barLength: 50,
-      showShop: false,
+      holdingEnergy: false,
     };
   },
   computed: {
@@ -335,10 +336,12 @@ export default {
   methods: {
     clickEnergy() {
       try {
-        const gain = this.getInfo.energyClick;
-        this.gameStats.clicks++;
-        this.gameData.resources.energy += gain;
-        this.gameStats.resources.energy.gained.clicks += gain;
+        if (!this.generalData.mobile) {
+          const gain = this.getInfo.energyClick;
+          this.gameStats.clicks++;
+          this.gameData.resources.energy += gain;
+          this.gameStats.resources.energy.gained.clicks += gain;
+        }
       } catch (e) {
         console.error(e);
       }
@@ -356,6 +359,18 @@ export default {
       } catch (e) {
         console.error(e);
       }
+    },
+    holdEnergyTouch() {
+      this.holdingEnergy = true;
+      this.generalData.mobile = true;
+      const timer = setInterval(() => {
+        if (this.holdingEnergy) {
+          const gain = this.getInfo.energyClick;
+          this.gameStats.clicks++;
+          this.gameData.resources.energy += gain;
+          this.gameStats.resources.energy.gained.clicks += gain;
+        } else clearInterval(timer);
+      }, 200);
     },
     clickAir() {
       const { skills, resources } = this.gameData;

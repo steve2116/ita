@@ -82,8 +82,10 @@
   <section>
     <h3>Clicking</h3>
     <section class="click-info three">
-      <p>Total clicks: {{ clicking.clicks }}</p>
-      <p v-if="clicking.energy > 1">Energy per click: {{ clicking.energy }}</p>
+      <p>Total clicks: {{ numberAsReadable(clicking.clicks) }}</p>
+      <p v-if="clicking.energy > 1">
+        Energy per click: {{ numberAsReadable(clicking.energy) }}
+      </p>
       <template v-else />
     </section>
   </section>
@@ -124,7 +126,7 @@
           </p>
           <template v-else />
         </template>
-        <p>Softcap starts at level {{ skill.softcap }}</p>
+        <p>Softcap starts at level {{ numberAsReadable(skill.softcap) }}</p>
       </section>
     </section>
   </section>
