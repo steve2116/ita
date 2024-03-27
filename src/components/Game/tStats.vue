@@ -79,13 +79,16 @@
       </section>
     </section>
   </section>
-  <section v-if="clicking.energy > 1">
+  <section>
     <h3>Clicking</h3>
     <section class="click-info three">
-      <p>Energy per click: {{ clicking.energy }}</p>
+      <p>Total clicks: {{ numberAsReadable(clicking.clicks) }}</p>
+      <p v-if="clicking.energy > 1">
+        Energy per click: {{ numberAsReadable(clicking.energy) }}
+      </p>
+      <template v-else />
     </section>
   </section>
-  <template v-else />
   <section v-if="Object.keys(skills).length > 0">
     <h3>Skills</h3>
     <section
@@ -123,7 +126,7 @@
           </p>
           <template v-else />
         </template>
-        <p>Softcap starts at level {{ skill.softcap }}</p>
+        <p>Softcap starts at level {{ numberAsReadable(skill.softcap) }}</p>
       </section>
     </section>
   </section>
@@ -160,6 +163,7 @@ export default {
   data() {
     return {
       clicking: {
+        clicks: 0,
         energy: 0,
       },
       /** @type {{[resource: string]: {[key in ("gained" | "lost")]: {[type: string]: number}}}} */
@@ -202,6 +206,7 @@ export default {
           const getInfo = thisRef.getInfo;
           const { gameData, gameStats } = thisRef;
           const { resources, clicking, skills } = thisRef;
+          clicking.clicks = gameStats.clicks;
           thisRef.timePlayed = Math.round(gameStats.time.online);
           thisRef.playedSince = new Date(
             gameStats.time.playedSince
